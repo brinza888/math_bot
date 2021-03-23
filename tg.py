@@ -38,6 +38,7 @@ def get_text_messages(message):
         markup.add(types.KeyboardButton('Помощь'))
         final_message = BytesIO(urllib.request.urlopen('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg').read())
         bot.send_photo(message.chat.id, final_message)
-
+def artemlox():
+    pass
 
 bot.polling(none_stop=True)
