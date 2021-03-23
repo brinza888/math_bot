@@ -31,7 +31,7 @@ def get_text_messages(message):
         final_message = '<b>Выберите команду:</b> \n <b>~</b> : Логическое отрицание \n <b>&</b> : Конъюнкция \n <b>|</b> : Дизъюнкция \n <b>></b> Импликация \n <b>^</b> : Исключающее или \n <b>=</b> : Эквиваленция'
         bot.send_message(message.chat.id, final_message, parse_mode='html' )
     elif 'гей' in get_message_bot:
-        final_message = f"{message.from_user.first_name}, сам гей"
+        final_message = f"Артем, сам гей"
         bot.send_message(message.chat.id, final_message, parse_mode='html')
     else:
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
