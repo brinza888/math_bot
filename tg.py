@@ -42,8 +42,21 @@ def send_help(message):
 @bot.message_handler(regexp="&|\||>|~|\^|=")
 def handle_ops(message):
     out, variables = shunting_yard(message.text)
-    print(out)
-    bot.send_message(message.chat.id, str(out))
+    n = len(variables)
+    variables_print = ''
+
+    for v in variables:
+        variables_print += str(v).ljust(6)
+    variables_print += 'F'.ljust(6) + '\n'
+
+    for i in range(2 ** n):
+        values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
+        d = {variables[k]: values[k] for k in range(n)}
+        for v in values:
+            variables_print += str(v).ljust(6)
+        variables_print += str(int(calculate(out, d))).ljust(6) + '\n'
+    
+    bot.send_message(message.chat.id, variables_print)
 
 
 @bot.message_handler(content_types=['text'])
@@ -58,7 +71,7 @@ def get_text_messages(message):
         final_message = HELP_STR
     elif 'гей' in get_message_bot:
         final_message = f"{message.from_user.first_name}, сам гей!"
-    else:
+    elif get_message_bot == 'ахуеть':
         markup.add(types.KeyboardButton('Помощь'))
         final_message = MEM_IMAGE
 
