@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import telebot
+from matrix import minor
+from matrix import det
 from telebot import types
 import requests
 from io import BytesIO
@@ -38,6 +40,23 @@ def start_message(message):
 def send_help(message):
     bot.send_message(message.chat.id, HELP_STR, parse_mode='html')
 
+
+
+@bot.message_handler(regexp="matr|opred")
+def mat(message):
+    global sendsize
+    sendsize = bot.send_message(message.chat.id, "Введите размер матрицы:")
+    bot.register_next_step_handler(sendsize, pizda)  #Переходит к другому шагу с переменной sendmsg
+
+def pizda(message):
+    #ma = message.text - размер матрицы
+    sendmatr = bot.send_message(message.chat.id, "Введите матрицу:")
+    bot.register_next_step_handler(sendmatr, input)
+
+def input(message):
+    text=str(message.text)
+    matric = [[int(x) for x in row.split()] for row in text.split('\n')]
+    bot.send_message(message.chat.id, str(det(matric)))
 
 @bot.message_handler(regexp="&|\||>|~|\^|=")
 def handle_ops(message):
@@ -81,6 +100,5 @@ def get_text_messages(message):
         bot.send_photo(message.chat.id, final_message, reply_markup=markup)
     else:
         bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
-
 
 bot.polling(none_stop=True)
