@@ -43,20 +43,20 @@ def send_help(message):
 def handle_ops(message):
     out, variables = shunting_yard(message.text)
     n = len(variables)
-    var_pr=""
+    variables_print = ''
 
     for v in variables:
-        var_pr+=str(v) + "    "
-    var_pr+="F"+"\n"
+        variables_print += str(v).ljust(6)
+    variables_print += 'F'.ljust(6) + '\n'
 
     for i in range(2 ** n):
         values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
         d = {variables[k]: values[k] for k in range(n)}
-
         for v in values:
-            var_pr+=str(v) + "    "
-        var_pr+=str(int(calculate(out, d))) + "\n"
-    bot.send_message(message.chat.id, var_pr)
+            variables_print += str(v).ljust(6)
+        variables_print += str(int(calculate(out, d))).ljust(6) + '\n'
+
+    bot.send_message(message.chat.id, variables_print)
 
 
 @bot.message_handler(content_types=['text'])
