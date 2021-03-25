@@ -1,94 +1,99 @@
 # -*- coding: utf-8 -*-
-import telebot
-from matrix import minor
-from matrix import det
-from telebot import types
-import requests
-from io import BytesIO
+from io import BytesIO, StringIO  # from base-library
 
-from logic import shunting_yard, calculate
+import requests  # from site-package
+import telebot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+
+from logic import build_table  # from your modules
+from matrix import det
+
+
+r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
+MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
 
 operators = {
-    "~": ("Логическое отрицание",),
-    "&": ("Конъюнкция",),
-    "|": ("Дизъюнкция",),
-    ">": ("Импликация",),
-    "^": ("Исключающее или",),
-    "=": ("Эквиваленция",),
+    '~': ('Логическое отрицание',),
+    '&': ('Конъюнкция',),
+    '|': ('Дизъюнкция',),
+    '>': ('Импликация',),
+    '^': ('Исключающее или',),
+    '=': ('Эквиваленция',),
 }
 
-HELP_STR = "\n".join([f"<b>{op}</b> {op_info[0]}" for op, op_info in operators.items()])
+HELP_STR = '\n'.join([f'<b>{op}</b> {op_info[0]}' for op, op_info in operators.items()])
 
-
-with open("token.txt") as tk:
+with open('token.txt') as tk:
     bot = telebot.TeleBot(tk.read())
 
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    markup.add(types.KeyboardButton('Помощь'))
-    markup.add(types.KeyboardButton('Что ты умеешь?'))
-    markup.add(types.KeyboardButton('Список операторов'))
-    send_mess = f"<b>Привет {message.from_user.first_name} {message.from_user.last_name}!</b>\nНажми на кнопку, чтобы узнать, что я умею"
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+    markup.add(KeyboardButton('Помощь'))
+    markup.add(KeyboardButton('Что ты умеешь?'))
+    markup.add(KeyboardButton('Список операторов'))
+    send_mess = (f'<b>Привет {message.from_user.first_name} {message.from_user.last_name}!</b>\n'
+                 f'Нажми на кнопку, чтобы узнать, что я умею')
     bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
 
-@bot.message_handler(regexp="список операторов")
+@bot.message_handler(regexp='список операторов')
 def send_ops(message):
     bot.send_message(message.chat.id, HELP_STR, parse_mode='html')
 
-@bot.message_handler(regexp="помощь")
+
+@bot.message_handler(regexp='помощь')
 def send_ops(message):
-    bot.send_message(message.chat.id, "Напишите 'матрица' или 'определитель' для нахождения определителя матрицы. Введите логическое выражение для построения таблицы истинности.", parse_mode='html')
+    bot.send_message(message.chat.id,
+                     ('/matrix для нахождения определителя матрицы.\n'
+                      '/logic для построения таблицы истинности логического выражения.'),
+                     parse_mode='html')
 
-@bot.message_handler(regexp="Что ты умеешь?")
+
+@bot.message_handler(regexp='Что ты умеешь?')
 def send_help(message):
-    bot.send_message(message.chat.id, 'Я бот, который умеет строить таблицы истинности и считать определители квадратных матриц.', parse_mode='html')
+    bot.send_message(message.chat.id,
+                     'Я бот, который умеет строить таблицы истинности и считать определители матриц.',
+                     parse_mode='html')
 
-@bot.message_handler(regexp="матрица|определитель")
-def matsize(message): #Ввод размеров матрицы и матрицы
-    try:   #для избежания ошибок - пользователь может ввести строку вместо числа
-        sendsize = bot.send_message(message.chat.id, "Введите размер матрицы:")
-        bot.register_next_step_handler(sendsize, matrixinput)  #Переходит к шагу matrixinput с переменной sendmsg
-    except Exception:
-        pass
-def matrixinput(message):
+
+@bot.message_handler(commands=['matrix', 'det'])
+def matrix_input(message):
+    send_matrix = bot.send_message(message.chat.id, 'Введите матрицу:')
+    bot.register_next_step_handler(send_matrix, matrix_output)
+
+
+def matrix_output(message):
     try:
-        sendmatr = bot.send_message(message.chat.id, "Введите матрицу:")
-        bot.register_next_step_handler(sendmatr, output)
-    except Exception:
-        pass
-def output(message):
-    try:
-        text=str(message.text)
-        matric = [[int(x) for x in row.split()] for row in text.split('\n')]
-        bot.send_message(message.chat.id, str(det(matric)))
-    except Exception:
-        pass
+        matrix = [[float(x) for x in row.split()] for row in message.text.split('\n')]
+        answer = det(matrix)
+    except ValueError:
+        bot.send_message(message.chat.id, 'Необходимо вводить числовую квадратную матрицу')
+    except IndexError:
+        bot.send_message(message.chat.id, 'Невозможно посчитать определитель матрицы')
+    else:
+        bot.send_message(message.chat.id, str(answer))
 
-@bot.message_handler(regexp="&|\||>|~|\^|=")
-def handle_ops(message):
-    out, variables = shunting_yard(message.text)
-    n = len(variables)
-    variables_print = ''
-    for v in variables:
-        variables_print += str(v).ljust(6)
-    variables_print += 'F'.ljust(6) + '\n'
 
-    for i in range(2 ** n):
-        values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
-        d = {variables[k]: values[k] for k in range(n)}
-        for v in values:
-            variables_print += str(v).ljust(6)
-        variables_print += str(int(calculate(out, d))).ljust(6) + '\n'
+@bot.message_handler(commands=['logic', 'table'])
+def logic_input(message):
+    send_logic = bot.send_message(message.chat.id, 'Введите логическое выражение:')
+    bot.register_next_step_handler(send_logic, logic_output)
 
-    bot.send_message(message.chat.id, variables_print)
 
-@bot.message_handler(regexp="ахуеть")    #отдельный хендлер картинки
+def logic_output(message):
+    table, variables = build_table(message.text)
+    out = StringIO()  # abstract file (file-object)
+    print(*variables, 'F', file=out, sep=' '*5)
+    for row in table:
+        print(*row, file=out, sep=' '*5)
+    bot.send_message(message.chat.id, out.getvalue())
+
+
+@bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
 def get_text_messages(message):
-    r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
-    MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
     bot.send_photo(message.chat.id, MEM_IMAGE)
+
 
 bot.polling(none_stop=True)
