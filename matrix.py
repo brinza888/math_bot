@@ -8,16 +8,25 @@ def minor(matrix, mi, mj):
             minor[-1].append(v)
     return minor
 
+
 def det(matrix):
     if len(matrix) == 1 and len(matrix[0]) == 1:
         return matrix[0][0]
-
     determ = 0
     sgn = 1
     for i in range(len(matrix)):
         determ += matrix[i][0] * det(minor(matrix, i, 0)) * sgn
         sgn = -sgn
     return determ
+
+
+def is_square(matrix):
+    n = len(matrix)
+    for row in matrix:
+        if n != len(row):
+            return False
+    return True
+
 
 """n = int(input('Введите размер матрицы:'))
 print('Введите матрицу:')
