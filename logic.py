@@ -1,18 +1,18 @@
 from collections import deque
 
 OPS = {
-    "~": (0, 1, lambda x: not x),
-    "&": (1, 2, lambda x, y: x and y),
-    "|": (2, 2, lambda x, y: x or y),
-    ">": (3, 2, lambda x, y: not x or y),
-    "^": (4, 2, lambda x, y: x != y),
-    "=": (4, 2, lambda x, y: x == y)
+    '~': (0, 1, lambda x: not x),
+    '&': (1, 2, lambda x, y: x and y),
+    '|': (2, 2, lambda x, y: x or y),
+    '>': (3, 2, lambda x, y: not x or y),
+    '^': (4, 2, lambda x, y: x != y),
+    '=': (4, 2, lambda x, y: x == y)
 }
 
 
 def shunting_yard(s):
     variables = []
-    right = deque(s.replace(" ", ""))
+    right = deque(s.replace(' ', ''))
     stack = []
     out = []
     while right:
@@ -25,10 +25,10 @@ def shunting_yard(s):
             while len(stack) > 0 and stack[-1] in OPS and OPS[stack[-1]][0] <= OPS[t][0]:
                 out.append(stack.pop())
             stack.append(t)
-        elif t == "(":
+        elif t == '(':
             stack.append(t)
-        elif t == ")":
-            while stack[-1] != "(":
+        elif t == ')':
+            while stack[-1] != '(':
                 out.append(stack.pop())
             stack.pop()
         else:
@@ -47,31 +47,36 @@ def calculate(tokens, variables):
             operands = deque()
             for i in range(OPS[t][1]):
                 if len(stack) == 0:
-                    raise SyntaxError("Incorrect logic expression")
+                    raise SyntaxError('Incorrect logic expression')
                 operands.appendleft(stack.pop())
             stack.append(OPS[t][2](*operands))
         elif t.isalpha():
             if t in variables:
                 stack.append(bool(variables[t]))
             else:
-                raise NameError(f"Variable '{t}' not defined!")
+                raise NameError(f'Variable "{t}" not defined!')
         else:
             stack.append(t)
 
     if not stack or len(stack) > 1:
-        raise SyntaxError("Incorrect logic expression")
+        raise SyntaxError('Incorrect logic expression')
     return stack[-1]
 
 
-if __name__ == '__main__':
-    s = input("Expression: ")
-
-    out, variables = shunting_yard(s)
+def build_table(s):
+    tokens, variables = shunting_yard(s)  # kowalski analysis
     n = len(variables)
-
-    print(*variables, "F", sep="\t")
-
+    table = []
     for i in range(2 ** n):
-        values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
+        values = [int(x) for x in bin(i)[2:].rjust(n, '0')]
         d = {variables[k]: values[k] for k in range(n)}
-        print(*values, int(calculate(out, d)), sep="\t")
+        table.append(values + [int(calculate(tokens, d))])
+    return table, variables
+
+
+if __name__ == '__main__':
+    s = input('Expression: ')
+    table, variables = build_table(s)
+    print(*variables, 'F')
+    for row in table:
+        print(*row)
