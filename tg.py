@@ -8,10 +8,6 @@ from io import BytesIO
 
 from logic import shunting_yard, calculate
 
-
-r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
-MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
-
 operators = {
     "~": ("Логическое отрицание",),
     "&": ("Конъюнкция",),
@@ -32,17 +28,25 @@ with open("token.txt") as tk:
 def start_message(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
     markup.add(types.KeyboardButton('Помощь'))
+    markup.add(types.KeyboardButton('Что ты умеешь?'))
+    markup.add(types.KeyboardButton('Список операторов'))
     send_mess = f"<b>Привет {message.from_user.first_name} {message.from_user.last_name}!</b>\nНажми на кнопку, чтобы узнать, что я умею"
     bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
 
 
-@bot.message_handler(regexp="help|ops|помощь")
-def send_help(message):
+@bot.message_handler(regexp="список операторов")
+def send_ops(message):
     bot.send_message(message.chat.id, HELP_STR, parse_mode='html')
 
+@bot.message_handler(regexp="помощь")
+def send_ops(message):
+    bot.send_message(message.chat.id, "Напишите 'матрица' или 'определитель' для нахождения определителя матрицы. Введите логическое выражение для построения таблицы истинности.", parse_mode='html')
 
+@bot.message_handler(regexp="Что ты умеешь?")
+def send_help(message):
+    bot.send_message(message.chat.id, 'Я бот, который умеет строить таблицы истинности и считает определители квадратных матриц.', parse_mode='html')
 
-@bot.message_handler(regexp="matr|opred")
+@bot.message_handler(regexp="матрица|определитель")
 def mat(message):
     global sendsize
     sendsize = bot.send_message(message.chat.id, "Введите размер матрицы:")
@@ -77,28 +81,10 @@ def handle_ops(message):
 
     bot.send_message(message.chat.id, variables_print)
 
-
-@bot.message_handler(content_types=['text'])
+@bot.message_handler(regexp="ахуеть")
 def get_text_messages(message):
-    get_message_bot = message.text.strip().lower()
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-
-    if get_message_bot == 'помощь':
-        markup.add(types.KeyboardButton('Список операторов'))
-        final_message = 'Я бот, который умеет строить таблицы истинности'
-    elif get_message_bot == 'список операторов':
-        final_message = HELP_STR
-    elif 'гей' in get_message_bot:
-        final_message = f"{message.from_user.first_name}, сам гей!"
-    elif get_message_bot == 'ахуеть':
-        final_message=MEM_IMAGE
-    else:
-        markup.add(types.KeyboardButton('Помощь'))
-
-
-    if isinstance(final_message, BytesIO):
-        bot.send_photo(message.chat.id, final_message, reply_markup=markup)
-    else:
-        bot.send_message(message.chat.id, final_message, parse_mode='html', reply_markup=markup)
+    r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
+    MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
+    bot.send_photo(message.chat.id, MEM_IMAGE)
 
 bot.polling(none_stop=True)
