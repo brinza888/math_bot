@@ -44,30 +44,34 @@ def send_ops(message):
 
 @bot.message_handler(regexp="Что ты умеешь?")
 def send_help(message):
-    bot.send_message(message.chat.id, 'Я бот, который умеет строить таблицы истинности и считает определители квадратных матриц.', parse_mode='html')
+    bot.send_message(message.chat.id, 'Я бот, который умеет строить таблицы истинности и считать определители квадратных матриц.', parse_mode='html')
 
 @bot.message_handler(regexp="матрица|определитель")
-def mat(message):
-    global sendsize
-    sendsize = bot.send_message(message.chat.id, "Введите размер матрицы:")
-    bot.register_next_step_handler(sendsize, pizda)  #Переходит к другому шагу с переменной sendmsg
-
-def pizda(message):
-    #ma = message.text - размер матрицы
-    sendmatr = bot.send_message(message.chat.id, "Введите матрицу:")
-    bot.register_next_step_handler(sendmatr, input)
-
-def input(message):
-    text=str(message.text)
-    matric = [[int(x) for x in row.split()] for row in text.split('\n')]
-    bot.send_message(message.chat.id, str(det(matric)))
+def matsize(message): #Ввод размеров матрицы и матрицы
+    try:   #для избежания ошибок - пользователь может ввести строку вместо числа
+        sendsize = bot.send_message(message.chat.id, "Введите размер матрицы:")
+        bot.register_next_step_handler(sendsize, matrixinput)  #Переходит к шагу matrixinput с переменной sendmsg
+    except Exception:
+        pass
+def matrixinput(message):
+    try:
+        sendmatr = bot.send_message(message.chat.id, "Введите матрицу:")
+        bot.register_next_step_handler(sendmatr, output)
+    except Exception:
+        pass
+def output(message):
+    try:
+        text=str(message.text)
+        matric = [[int(x) for x in row.split()] for row in text.split('\n')]
+        bot.send_message(message.chat.id, str(det(matric)))
+    except Exception:
+        pass
 
 @bot.message_handler(regexp="&|\||>|~|\^|=")
 def handle_ops(message):
     out, variables = shunting_yard(message.text)
     n = len(variables)
     variables_print = ''
-
     for v in variables:
         variables_print += str(v).ljust(6)
     variables_print += 'F'.ljust(6) + '\n'
@@ -81,7 +85,7 @@ def handle_ops(message):
 
     bot.send_message(message.chat.id, variables_print)
 
-@bot.message_handler(regexp="ахуеть")
+@bot.message_handler(regexp="ахуеть")    #отдельный хендлер картинки
 def get_text_messages(message):
     r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
     MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
