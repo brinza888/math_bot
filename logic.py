@@ -63,15 +63,20 @@ def calculate(tokens, variables):
     return stack[-1]
 
 
-if __name__ == '__main__':
-    s = input('Expression: ')
-
-    out, variables = shunting_yard(s)
+def build_table(s):
+    tokens, variables = shunting_yard(s)  # kowalski analysis
     n = len(variables)
-
-    print(*variables, 'F', sep='\t')
-
+    table = []
     for i in range(2 ** n):
         values = [int(x) for x in bin(i)[2:].rjust(n, '0')]
         d = {variables[k]: values[k] for k in range(n)}
-        print(*values, int(calculate(out, d)), sep='\t')
+        table.append(values + [int(calculate(tokens, d))])
+    return table, variables
+
+
+if __name__ == '__main__':
+    s = input('Expression: ')
+    table, variables = build_table(s)
+    print(*variables, 'F')
+    for row in table:
+        print(*row)
