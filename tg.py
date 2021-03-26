@@ -24,7 +24,7 @@ operators = {
 HELP_STR = '\n'.join([f'<b>{op}</b> {op_info[0]}' for op, op_info in operators.items()])
 
 with open('token.txt') as tk:
-    bot = telebot.TeleBot(tk.read())
+    bot = telebot.TeleBot(tk.read().strip())
 
 
 @bot.message_handler(commands=['start'])
@@ -60,7 +60,7 @@ def send_help(message):
 
 @bot.message_handler(commands=['matrix', 'det'])
 def matrix_input(message):
-    send_matrix = bot.send_message(message.chat.id, 'Введите матрицу:')
+    send_matrix = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)')
     bot.register_next_step_handler(send_matrix, matrix_output)
 
 
