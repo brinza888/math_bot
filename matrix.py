@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 def minor(matrix, mi, mj):
     minor = []
     for i, row in enumerate(matrix):

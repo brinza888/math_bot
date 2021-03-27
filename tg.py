@@ -1,66 +1,59 @@
 # -*- coding: utf-8 -*-
-from io import BytesIO, StringIO  # from base-library
+from io import BytesIO, StringIO
 
-import requests  # from site-package
+import requests
 import telebot
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
-from logic import build_table  # from your modules
+from logic import build_table, OPS
 from matrix import det
 
 
 r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
 MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
 
-operators = {
-    '~': ('Логическое отрицание',),
-    '&': ('Конъюнкция',),
-    '|': ('Дизъюнкция',),
-    '>': ('Импликация',),
-    '^': ('Исключающее или',),
-    '=': ('Эквиваленция',),
-}
+# generate supported operators description
+ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
-HELP_STR = '\n'.join([f'<b>{op}</b> {op_info[0]}' for op, op_info in operators.items()])
 
 with open('token.txt') as tk:
     bot = telebot.TeleBot(tk.read().strip())
 
 
+menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
+menu.add(KeyboardButton('/logic'))
+menu.add(KeyboardButton('/matrix'))
+menu.add(KeyboardButton('помощь'))
+
+hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
+
+
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    markup.add(KeyboardButton('Помощь'))
-    markup.add(KeyboardButton('Что ты умеешь?'))
-    markup.add(KeyboardButton('Список операторов'))
-    send_mess = (f'<b>Привет {message.from_user.first_name} {message.from_user.last_name}!</b>\n'
-                 f'Нажми на кнопку, чтобы узнать, что я умею')
-    bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=markup)
+    send_mess = (f'<b>Привет, {message.from_user.first_name} {message.from_user.last_name}!</b>\n'
+                 f'Используй клавиатуру или команды для вызова нужной фишки\n'
+                 f'/help - вызов помощи')
+    bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=menu)
 
 
-@bot.message_handler(regexp='список операторов')
-def send_ops(message):
-    bot.send_message(message.chat.id, HELP_STR, parse_mode='html')
+@bot.message_handler(regexp='помощь|help')
+def word_help(message):
+    send_help(message)  # redirect this question to send_help
 
 
-@bot.message_handler(regexp='помощь')
-def send_ops(message):
-    bot.send_message(message.chat.id,
-                     ('/matrix для нахождения определителя матрицы.\n'
-                      '/logic для построения таблицы истинности логического выражения.'),
-                     parse_mode='html')
-
-
-@bot.message_handler(regexp='Что ты умеешь?')
+@bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
-                     'Я бот, который умеет строить таблицы истинности и считать определители матриц.',
+                     ('/matrix для нахождения определителя матрицы.\n'
+                      '/logic для построения таблицы истинности логического выражения.\n'
+                      'Описание допустимых логических операторов:\n'
+                      f'{ops_description}'),
                      parse_mode='html')
 
 
 @bot.message_handler(commands=['matrix', 'det'])
 def matrix_input(message):
-    send_matrix = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)')
+    send_matrix = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
     bot.register_next_step_handler(send_matrix, matrix_output)
 
 
@@ -73,12 +66,12 @@ def matrix_output(message):
     except IndexError:
         bot.send_message(message.chat.id, 'Невозможно посчитать определитель матрицы')
     else:
-        bot.send_message(message.chat.id, str(answer))
+        bot.send_message(message.chat.id, str(answer), reply_markup=menu)
 
 
-@bot.message_handler(commands=['logic', 'table'])
+@bot.message_handler(commands=['logic', 'exp'])
 def logic_input(message):
-    send_logic = bot.send_message(message.chat.id, 'Введите логическое выражение:')
+    send_logic = bot.send_message(message.chat.id, 'Введите логическое выражение:', reply_markup=hide_menu)
     bot.register_next_step_handler(send_logic, logic_output)
 
 
@@ -88,7 +81,7 @@ def logic_output(message):
     print(*variables, 'F', file=out, sep=' '*5)
     for row in table:
         print(*row, file=out, sep=' '*5)
-    bot.send_message(message.chat.id, out.getvalue())
+    bot.send_message(message.chat.id, out.getvalue(), reply_markup=menu)
 
 
 @bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
