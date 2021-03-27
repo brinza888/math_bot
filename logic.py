@@ -1,12 +1,12 @@
 from collections import deque
 
 OPS = {
-    '~': (0, 1, lambda x: not x),
-    '&': (1, 2, lambda x, y: x and y),
-    '|': (2, 2, lambda x, y: x or y),
-    '>': (3, 2, lambda x, y: not x or y),
-    '^': (4, 2, lambda x, y: x != y),
-    '=': (4, 2, lambda x, y: x == y)
+    '~': (0, 1, lambda x: not x, 'Отрицание (НЕ)'),
+    '&': (1, 2, lambda x, y: x and y, 'Конъюнкция (И)'),
+    '|': (2, 2, lambda x, y: x or y, 'Дизъюнкция (ИЛИ)'),
+    '>': (3, 2, lambda x, y: not x or y, 'Импликация (следовательно)'),
+    '^': (4, 2, lambda x, y: x != y, 'Исключающее ИЛИ (XOR)'),
+    '=': (4, 2, lambda x, y: x == y, 'Эквиваленция (тождество)')
 }
 
 
