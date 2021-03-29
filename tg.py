@@ -76,12 +76,17 @@ def logic_input(message):
 
 
 def logic_output(message):
-    table, variables = build_table(message.text)
-    out = StringIO()  # abstract file (file-object)
-    print(*variables, 'F', file=out, sep=' '*2)
-    for row in table:
-        print(*row, file=out, sep=' '*2)
-    bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
+    try:
+        table, variables = build_table(message.text)
+        out = StringIO()  # abstract file (file-object)
+        print(*variables, 'F', file=out, sep=' '*2)
+        for row in table:
+            print(*row, file=out, sep=' '*2)
+        bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
+    except AttributeError:
+        bot.send_message(message.chat.id, "ошибка ввода данных")
+    except SyntaxError:
+        bot.send_message(message.chat.id, "ошибка ввода данных")
 
 
 @bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
