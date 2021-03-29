@@ -78,10 +78,10 @@ def logic_input(message):
 def logic_output(message):
     table, variables = build_table(message.text)
     out = StringIO()  # abstract file (file-object)
-    print(*variables, 'F', file=out, sep=' '*5)
+    print(*variables, 'F', file=out, sep=' '*2)
     for row in table:
-        print(*row, file=out, sep=' '*5)
-    bot.send_message(message.chat.id, out.getvalue(), reply_markup=menu)
+        print(*row, file=out, sep=' '*2)
+    bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
 
 
 @bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
