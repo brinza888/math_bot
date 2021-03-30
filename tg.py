@@ -40,6 +40,7 @@ def start_message(message):
 def if_command(message):
     bot.send_message(message.chat.id, "Введите корректную команду")
 
+
 @bot.message_handler(regexp='помощь|help')
 def word_help(message):
     send_help(message)  # redirect this question to send_help
@@ -65,10 +66,8 @@ def matrix_output(message):
     try:
         matrix = [[float(x) for x in row.split()] for row in message.text.split('\n')]
         answer = det(matrix)
-    except ValueError:
+    except ValueError, IndexError:
         bot.send_message(message.chat.id, 'Необходимо вводить числовую квадратную матрицу', reply_markup=menu)
-    except IndexError:
-        bot.send_message(message.chat.id, 'Невозможно посчитать определитель матрицы', reply_markup=menu)
     else:
         bot.send_message(message.chat.id, str(answer), reply_markup=menu)
 
@@ -87,10 +86,9 @@ def logic_output(message):
         for row in table:
             print(*row, file=out, sep=' '*2)
         bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
-    except AttributeError:
+    except AttributeError, SyntaxError:
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
-    except SyntaxError:
-        bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
+    
 
 
 @bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
