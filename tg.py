@@ -25,6 +25,7 @@ menu.add(KeyboardButton('/logic'))
 menu.add(KeyboardButton('/matrix'))
 menu.add(KeyboardButton('помощь'))
 
+
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
 
@@ -66,7 +67,7 @@ def matrix_output(message):
     try:
         matrix = [[float(x) for x in row.split()] for row in message.text.split('\n')]
         answer = det(matrix)
-    except ValueError, IndexError:
+    except (ValueError, IndexError):
         bot.send_message(message.chat.id, 'Необходимо вводить числовую квадратную матрицу', reply_markup=menu)
     else:
         bot.send_message(message.chat.id, str(answer), reply_markup=menu)
@@ -86,9 +87,8 @@ def logic_output(message):
         for row in table:
             print(*row, file=out, sep=' '*2)
         bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
-    except AttributeError, SyntaxError:
+    except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
-    
 
 
 @bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
