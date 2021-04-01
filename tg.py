@@ -34,12 +34,7 @@ def start_message(message):
     send_mess = (f'<b>Привет, {message.from_user.first_name} {message.from_user.last_name}!</b>\n'
                  f'Используй клавиатуру или команды для вызова нужной фишки\n'
                  f'/help - вызов помощи')
-    sent_value = bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=menu)
-    bot.register_next_step_handler(sent_value, if_command)
-
-
-def if_command(message):
-    bot.send_message(message.chat.id, "Введите корректную команду")
+    bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=menu)
 
 
 @bot.message_handler(regexp='помощь|help')
