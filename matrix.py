@@ -17,6 +17,8 @@ def minor(matrix, mi, mj):
 def det(matrix):
     if len(matrix) == 1 and len(matrix[0]) == 1:
         return matrix[0][0]
+    if not is_square(matrix):
+        raise ValueError("Matrix must be square!")
     det_value = 0
     sgn = 1
     for i in range(len(matrix)):
