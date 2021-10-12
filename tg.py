@@ -11,6 +11,8 @@ from logic import build_table, OPS
 from matrix import det
 
 
+MAX_MATRIX = 8
+
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
@@ -49,7 +51,7 @@ def start_message(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
-                     ('/matrix для нахождения определителя матрицы.\n'
+                     ('/matrix для нахождения определителя матрицы (не более чем 8x8).\n'
                       '/logic для построения таблицы истинности логического выражения.\n'
                       'Описание допустимых логических операторов:\n'
                       f'{ops_description}'),
@@ -65,6 +67,9 @@ def matrix_input(message):
 def matrix_output(message):
     try:
         matrix = [[float(x) for x in row.split()] for row in message.text.split('\n')]
+        if len(matrix) > MAX_MATRIX:
+            bot.send_message(message.chat.id, f'Размер матрицы не должен превышать {MAX_MATRIX}x{MAX_MATRIX} =(')
+            return
         answer = det(matrix)
     except (ValueError, IndexError):
         bot.send_message(message.chat.id, 'Необходимо вводить числовую квадратную матрицу', reply_markup=menu)
