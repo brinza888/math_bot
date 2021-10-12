@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+
+
 def minor(matrix, mi, mj):
     minor = []
     for i, row in enumerate(matrix):
-        if i == mi: continue
+        if i == mi:
+            continue
         minor.append([])
         for j, v in enumerate(row):
-            if j == mj: continue
+            if j == mj:
+                continue
             minor[-1].append(v)
     return minor
 
@@ -13,12 +17,14 @@ def minor(matrix, mi, mj):
 def det(matrix):
     if len(matrix) == 1 and len(matrix[0]) == 1:
         return matrix[0][0]
-    determ = 0
+    if not is_square(matrix):
+        raise ValueError("Matrix must be square!")
+    det_value = 0
     sgn = 1
     for i in range(len(matrix)):
-        determ += matrix[i][0] * det(minor(matrix, i, 0)) * sgn
+        det_value += matrix[i][0] * det(minor(matrix, i, 0)) * sgn
         sgn = -sgn
-    return determ
+    return det_value
 
 
 def is_square(matrix):
