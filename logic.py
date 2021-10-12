@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+
 from collections import deque
+
 
 OPS = {
     '~': (0, 1, lambda x: not x, 'Отрицание (НЕ)'),
