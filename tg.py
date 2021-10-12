@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
-from io import BytesIO, StringIO
+from io import StringIO
 
-import requests
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
 from logic import build_table, OPS
 from matrix import det
 
-
-r = requests.get('https://www.meme-arsenal.com/memes/ddcf6ef709b8db99da11efd281abd990.jpg')
-MEM_IMAGE = BytesIO(r.content)  # BytesIO creates file-object from bytes string
 
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
@@ -85,11 +81,6 @@ def logic_output(message):
         bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
     except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
-
-
-@bot.message_handler(regexp='ахуеть')  # отдельный хендлер картинки
-def get_text_messages(message):
-    bot.send_photo(message.chat.id, MEM_IMAGE)
 
 
 if __name__ == '__main__':
