@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
 from io import StringIO
 
 import telebot
@@ -12,7 +14,11 @@ from matrix import det
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
 
-with open('token.txt') as tk:
+if not os.path.isfile('token.txt'):  # check if token.txt exists
+    print('Bot API token should be passed in token.txt file', file=sys.stderr)
+    exit(1)
+
+with open('token.txt') as tk:  # attempt to read api token
     bot = telebot.TeleBot(tk.read().strip())
 
 
