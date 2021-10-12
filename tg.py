@@ -23,7 +23,7 @@ with open('token.txt') as tk:
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/logic'))
 menu.add(KeyboardButton('/matrix'))
-menu.add(KeyboardButton('помощь'))
+menu.add(KeyboardButton('/help'))  # changed as /help because help keyword was removed
 
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
@@ -37,9 +37,10 @@ def start_message(message):
     bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=menu)
 
 
-@bot.message_handler(regexp='помощь|help')
-def word_help(message):
-    send_help(message)  # redirect this question to send_help
+# Will be removed
+# @bot.message_handler(regexp='помощь|help')
+# def word_help(message):
+#     send_help(message)  # redirect this question to send_help
 
 
 @bot.message_handler(commands=['help'])
@@ -91,4 +92,5 @@ def get_text_messages(message):
     bot.send_photo(message.chat.id, MEM_IMAGE)
 
 
-bot.polling(none_stop=True)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
