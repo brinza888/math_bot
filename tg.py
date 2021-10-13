@@ -8,7 +8,7 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
 from logic import build_table, OPS
-from matrix import det
+from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 
 
 MAX_MATRIX = 8
@@ -66,12 +66,17 @@ def matrix_input(message):
 
 def matrix_output(message):
     try:
-        matrix = [[float(x) for x in row.split()] for row in message.text.split('\n')]
-        if len(matrix) > MAX_MATRIX:
+        lst = [[float(x) for x in row.split()] for row in message.text.split('\n')]
+        n = len(lst)
+        matrix = Matrix(n, n, 0)
+        matrix.fill(lst)
+        if matrix.n > MAX_MATRIX:
             bot.send_message(message.chat.id, f'Размер матрицы не должен превышать {MAX_MATRIX}x{MAX_MATRIX} =(')
             return
-        answer = det(matrix)
-    except (ValueError, IndexError):
+        answer = matrix.det()
+    except SizesMatchError:
+        bot.send_message(message.chat.id, 'Расхождение размеров строк и столбцов. Ожидилась квадратная матрица!')
+    except SquareMatrixRequired:
         bot.send_message(message.chat.id, 'Необходимо вводить числовую квадратную матрицу', reply_markup=menu)
     else:
         bot.send_message(message.chat.id, str(answer), reply_markup=menu)

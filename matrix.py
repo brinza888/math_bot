@@ -1,41 +1,102 @@
 # -*- coding: utf-8 -*-
+from typing import Tuple, List, Union
+from functools import lru_cache
+import hashlib
 
 
-def minor(matrix, mi, mj):
-    minor = []
-    for i, row in enumerate(matrix):
-        if i == mi:
-            continue
-        minor.append([])
-        for j, v in enumerate(row):
-            if j == mj:
-                continue
-            minor[-1].append(v)
-    return minor
+class SizesMatchError (ValueError):
+    pass
 
 
-def det(matrix):
-    if len(matrix) == 1 and len(matrix[0]) == 1:
-        return matrix[0][0]
-    if not is_square(matrix):
-        raise ValueError("Matrix must be square!")
-    det_value = 0
-    sgn = 1
-    for i in range(len(matrix)):
-        det_value += matrix[i][0] * det(minor(matrix, i, 0)) * sgn
-        sgn = -sgn
-    return det_value
+class SquareMatrixRequired (ValueError):
+    pass
 
 
-def is_square(matrix):
-    n = len(matrix)
-    for row in matrix:
-        if n != len(row):
+class Matrix:
+    def __init__(self, m: int, n: int, initial: Union[float, int] = 0):
+        self.__size: Tuple[int, int] = (m, n)
+        self.matrix = [[initial] * m for _ in range(n)]
+
+    @property
+    def m(self) -> int:
+        return self.__size[0]
+
+    @property
+    def n(self) -> int:
+        return self.__size[1]
+
+    def __len__(self) -> Tuple[int, int]:
+        return self.__size
+
+    def __getitem__(self, item: Tuple[int, int]) -> float:
+        return self.matrix[item[0]][item[1]]
+
+    def __setitem__(self, key: Tuple[int, int], value: Union[float, int]):
+        self.matrix[key[0]][key[1]] = float(value)
+
+    def __eq__(self, other: 'Matrix'):
+        if self.m != other.m or self.n != other.n:
             return False
-    return True
+        for i in range(self.m):
+            for j in range(self.n):
+                if self[i, j] != other[i, j]:
+                    return False
+        return True
+
+    def __hash__(self):  # hashing for lru_cache decorator
+        result = f"{self.m};{self.n};"
+        for row in self.matrix:
+            result += ','.join([str(x) for x in row]) + ';'
+        return int.from_bytes(hashlib.sha256(result.encode()).digest(), "little")
+
+    def fill(self, lst: List[List[Union[int, float]]]):
+        rows = len(lst)
+        if rows != self.m:
+            raise SizesMatchError("Count of rows in list must be same with count of rows in Matrix")
+        for i, row in enumerate(lst):
+            if len(row) != self.n:
+                raise SizesMatchError("Count of elements in list row must be same with count of columns in Matrix")
+            for j, element in enumerate(row):
+                self.matrix[i][j] = float(element)
+
+    def minor(self, el_i: int, el_j: int) -> 'Matrix':
+        minor = Matrix(self.m - 1, self.n - 1)
+        mi, mj = 0, 0
+        for i, row in enumerate(self.matrix):
+            if i == el_i:
+                continue
+            for j, v in enumerate(row):
+                if j == el_j:
+                    continue
+                minor[mi, mj] = float(v)
+                mj += 1
+            mi += 1
+            mj = 0
+        return minor
+
+    @lru_cache
+    def det(self) -> float:
+        if len(self.matrix) == 1 and len(self.matrix[0]) == 1:
+            return self.matrix[0][0]
+        if not self.is_square:
+            raise SquareMatrixRequired("Determinant defined only for square (m=n) matrix")
+        det_value = 0
+        sgn = 1
+        for i in range(len(self.matrix)):
+            det_value += self.matrix[i][0] * self.minor(i, 0).det() * sgn
+            sgn = -sgn
+        return det_value
+
+    @property
+    def is_square(self) -> bool:
+        return self.m == self.n
 
 
-"""n = int(input('Введите размер матрицы:'))
-print('Введите матрицу:')
-matrix = [list(map(float,input().split())) for i in range(n)]
-print('Определитель:', det(matrix))"""
+if __name__ == '__main__':
+
+    n = int(input('Введите размер матрицы: '))
+    print('Введите матрицу: ')
+    matrix = [list(map(float, input().split())) for i in range(n)]
+    A = Matrix(n, n)
+    A.fill(matrix)
+    print('Определитель:', A.det())
