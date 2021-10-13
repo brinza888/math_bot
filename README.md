@@ -1,4 +1,7 @@
 # Math bot
+Copyright (C) 2021 Ilya Bezrukov
+
+Licensed under GNU GPL-2.0-or-later
 
 ## Features
 Bot for Telegram that help you to solve some math problems. Now it can solve:

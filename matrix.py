@@ -1,4 +1,20 @@
 # -*- coding: utf-8 -*-
+
+# Copyright (C) 2021 Ilya Bezrukov
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Tuple, List, Union
 from functools import lru_cache
 import hashlib
@@ -93,7 +109,8 @@ class Matrix:
 
 
 if __name__ == '__main__':
-
+    print("Copyright (C) 2021 Ilya Bezrukov")
+    print("Licensed under GNU GPL-2.0-or-later")
     n = int(input('Введите размер матрицы: '))
     print('Введите матрицу: ')
     matrix = [list(map(float, input().split())) for i in range(n)]
