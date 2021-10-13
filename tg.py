@@ -11,11 +11,11 @@ from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 
 
+# max size available for matrix is
 MAX_MATRIX = 8
 
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
-
 
 if not os.path.isfile('token.txt'):  # check if token.txt exists
     print('Bot API token should be passed in token.txt file', file=sys.stderr)
@@ -28,7 +28,7 @@ with open('token.txt') as tk:  # attempt to read api token
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/logic'))
 menu.add(KeyboardButton('/matrix'))
-menu.add(KeyboardButton('/help'))  # changed as /help because help keyword was removed
+menu.add(KeyboardButton('/help'))
 
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
@@ -40,12 +40,6 @@ def start_message(message):
                  f'Используй клавиатуру или команды для вызова нужной фишки\n'
                  f'/help - вызов помощи')
     bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=menu)
-
-
-# Will be removed
-# @bot.message_handler(regexp='помощь|help')
-# def word_help(message):
-#     send_help(message)  # redirect this question to send_help
 
 
 @bot.message_handler(commands=['help'])
@@ -70,14 +64,22 @@ def matrix_output(message):
         n = len(lst)
         matrix = Matrix(n, n, 0)
         matrix.fill(lst)
-        if matrix.n > MAX_MATRIX:
-            bot.send_message(message.chat.id, f'Размер матрицы не должен превышать {MAX_MATRIX}x{MAX_MATRIX} =(')
+        if matrix.n > MAX_MATRIX or matrix.m > MAX_MATRIX:
+            bot.send_message(message.chat.id,
+                             f'Размер матрицы не должен превышать {MAX_MATRIX}x{MAX_MATRIX} =(',
+                             reply_markup=menu)
             return
         answer = matrix.det()
     except SizesMatchError:
-        bot.send_message(message.chat.id, 'Расхождение размеров строк и столбцов. Ожидилась квадратная матрица!')
-    except SquareMatrixRequired:
-        bot.send_message(message.chat.id, 'Необходимо вводить числовую квадратную матрицу', reply_markup=menu)
+        bot.send_message(message.chat.id,
+                         'Расхождение размеров строк и столбцов. Ожидилась <b>квадратная</b> матрица!',
+                         parse_mode='html',
+                         reply_markup=menu)
+    except (SquareMatrixRequired, ValueError):
+        bot.send_message(message.chat.id,
+                         'Необходимо вводить <b>числовую</b> квадратную матрицу',
+                         reply_markup=menu,
+                         parse_mode='html')
     else:
         bot.send_message(message.chat.id, str(answer), reply_markup=menu)
 
