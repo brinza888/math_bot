@@ -31,7 +31,7 @@ class SquareMatrixRequired (ValueError):
 class Matrix:
     def __init__(self, m: int, n: int, initial: Union[float, int] = 0):
         self.__size: Tuple[int, int] = (m, n)
-        self.matrix = [[initial] * m for _ in range(n)]
+        self.matrix = [[initial] * n for _ in range(m)]
 
     @property
     def m(self) -> int:
@@ -41,7 +41,12 @@ class Matrix:
     def n(self) -> int:
         return self.__size[1]
 
-    def __len__(self) -> Tuple[int, int]:
+    @property
+    def is_square(self) -> bool:
+        return self.m == self.n
+
+    @property
+    def size(self) -> Tuple[int, int]:
         return self.__size
 
     def __getitem__(self, item: Tuple[int, int]) -> float:
@@ -51,7 +56,7 @@ class Matrix:
         self.matrix[key[0]][key[1]] = float(value)
 
     def __eq__(self, other: 'Matrix'):
-        if self.m != other.m or self.n != other.n:
+        if self.size != other.size:
             return False
         for i in range(self.m):
             for j in range(self.n):
@@ -103,9 +108,27 @@ class Matrix:
             sgn = -sgn
         return det_value
 
-    @property
-    def is_square(self) -> bool:
-        return self.m == self.n
+    @classmethod
+    def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
+        m = len(lst)
+        if isinstance(lst[0], list):
+            n = len(lst[0])
+        else:
+            n = 1
+        matrix = Matrix(m, n)
+        matrix.fill(lst)
+        return matrix
+
+    @classmethod
+    def zero(cls, m: int, n: int) -> 'Matrix':
+        return Matrix(m, n)
+
+    @classmethod
+    def identity(cls, n: int) -> 'Matrix':
+        matrix = Matrix(n, n)
+        for i in range(n):
+            matrix.matrix[i][i] = 1
+        return matrix
 
 
 if __name__ == '__main__':

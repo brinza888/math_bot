@@ -42,7 +42,7 @@ with open('token.txt') as tk:  # attempt to read api token
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/logic'))
-menu.add(KeyboardButton('/matrix'))
+menu.add(KeyboardButton('/det'))
 menu.add(KeyboardButton('/help'))
 
 
@@ -60,46 +60,53 @@ def start_message(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
-                     ('/matrix для нахождения определителя матрицы (не более чем 8x8).\n'
+                     ('/det для нахождения определителя матрицы (не более чем 8x8).\n'
                       '/logic для построения таблицы истинности логического выражения.\n'
                       'Описание допустимых логических операторов:\n'
                       f'{ops_description}'),
                      parse_mode='html')
 
 
-@bot.message_handler(commands=['matrix', 'det'])
-def matrix_input(message):
+@bot.message_handler(commands=['det'])
+def det(message):
     send_matrix = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
-    bot.register_next_step_handler(send_matrix, matrix_output)
+    bot.register_next_step_handler(send_matrix, matrix_input, action='det')
 
 
-def matrix_output(message):
+def calc_det(message, action, matrix):
+    try:
+        answer = matrix.det()
+    except SquareMatrixRequired:
+        bot.reply_to(message, 'Невозможно рассчитать определитель для не квадратной матрицы!', reply_markup=menu)
+    else:
+        bot.reply_to(message, f'{answer}', reply_markup=menu)
+
+
+action_mapper = {
+    'det': calc_det
+}
+
+
+def matrix_input(message, action):
     try:
         lst = [[float(x) for x in row.split()] for row in message.text.split('\n')]
-        n = len(lst)
-        matrix = Matrix(n, n, 0)
-        matrix.fill(lst)
-        if matrix.n > MAX_MATRIX or matrix.m > MAX_MATRIX:
-            bot.send_message(message.chat.id,
-                             f'Размер матрицы не должен превышать {MAX_MATRIX}x{MAX_MATRIX} =(',
-                             reply_markup=menu)
-            return
-        answer = matrix.det()
+        matrix = Matrix.from_list(lst)
     except SizesMatchError:
-        bot.send_message(message.chat.id,
-                         'Расхождение размеров строк и столбцов. Ожидилась <b>квадратная</b> матрица!',
-                         parse_mode='html',
-                         reply_markup=menu)
-    except (SquareMatrixRequired, ValueError):
-        bot.send_message(message.chat.id,
-                         'Необходимо вводить <b>числовую</b> квадратную матрицу',
-                         reply_markup=menu,
-                         parse_mode='html')
+        bot.reply_to(message,
+                     'Несовпадение размеров строк или столбцов. Матрица должна быть <b>прямоугольной</b>.',
+                     reply_markup=menu,
+                     parse_mode='html')
+    except ValueError:
+        bot.reply_to(message,
+                     'Необходимо вводить <b>числовую</b> квадратную матрицу',
+                     reply_markup=menu,
+                     parse_mode='html')
     else:
-        bot.send_message(message.chat.id, str(answer), reply_markup=menu)
+        next_handler = action_mapper[action]
+        next_handler(message, action=action, matrix=matrix)
 
 
-@bot.message_handler(commands=['logic', 'exp'])
+@bot.message_handler(commands=['logic'])
 def logic_input(message):
     send_logic = bot.send_message(message.chat.id, 'Введите логическое выражение:', reply_markup=hide_menu)
     bot.register_next_step_handler(send_logic, logic_output)
