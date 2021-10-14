@@ -42,7 +42,7 @@ with open('token.txt') as tk:  # attempt to read api token
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/logic'))
-menu.add(KeyboardButton('/matrix'))
+menu.add(KeyboardButton('/det'))
 menu.add(KeyboardButton('/help'))
 
 
@@ -60,14 +60,14 @@ def start_message(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
-                     ('/matrix для нахождения определителя матрицы (не более чем 8x8).\n'
+                     ('/det для нахождения определителя матрицы (не более чем 8x8).\n'
                       '/logic для построения таблицы истинности логического выражения.\n'
                       'Описание допустимых логических операторов:\n'
                       f'{ops_description}'),
                      parse_mode='html')
 
 
-@bot.message_handler(commands=['matrix', 'det'])
+@bot.message_handler(commands=['det'])
 def matrix_input(message):
     send_matrix = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
     bot.register_next_step_handler(send_matrix, matrix_output)
@@ -99,7 +99,7 @@ def matrix_output(message):
         bot.send_message(message.chat.id, str(answer), reply_markup=menu)
 
 
-@bot.message_handler(commands=['logic', 'exp'])
+@bot.message_handler(commands=['logic'])
 def logic_input(message):
     send_logic = bot.send_message(message.chat.id, 'Введите логическое выражение:', reply_markup=hide_menu)
     bot.register_next_step_handler(send_logic, logic_output)
