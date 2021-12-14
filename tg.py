@@ -35,6 +35,7 @@ MAX_VARS = 7
 
 # max rings modulo
 MAX_MODULO = 10**15
+MAX_ELEMENTS = 101
 
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
@@ -162,7 +163,10 @@ def ring_output(message, command):
         title = 'Нильпотенты'
     else:
         return
-    s = '\n'.join([str(x) for x in result])
+    if len(result) > MAX_ELEMENTS:
+        s = 'Элементов слишком много чтобы их вывести...'
+    else:
+        s = '\n'.join([str(x) for x in result])
     bot.send_message(message.chat.id,
                      f'<b> {title} в Z/{n}</b>\n'
                      f'Количество: {len(result)}\n\n'
