@@ -49,6 +49,7 @@ menu.add(KeyboardButton('/logic'))
 menu.add(KeyboardButton('/det'))
 menu.add(KeyboardButton('/idempotents'))
 menu.add(KeyboardButton('/nilpotents'))
+menu.add(KeyboardButton('/inverse'))
 menu.add(KeyboardButton('/help'))
 
 
@@ -70,6 +71,7 @@ def send_help(message):
                       '/logic для построения таблицы истинности логического выражения.\n'
                       '/idempotents для поиска идемпотентных элементов в Z/n\n'
                       '/nilpotents для поиска нильпотентных элементов в Z/n\n'
+                      '/inverse для поиска обратного элемента в Z/n'
                       'Описание допустимых логических операторов:\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -141,11 +143,11 @@ def ring_input(message):
 def ring_output(message, command):
     try:
         n = int(message.text.strip())
-        if n >= MAX_MODULO or n < 2:
-            bot.send_message(message.chat.id, f'Ограничение: 2 < n < {MAX_MODULO}', reply_markup=menu)
-            return
     except ValueError:
         bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    if n >= MAX_MODULO or n < 2:
+        bot.send_message(message.chat.id, f'Ограничение: 2 < n < {MAX_MODULO}', reply_markup=menu)
         return
     if command == 'idempotents':
         result = find_idempotents(n)
@@ -162,6 +164,45 @@ def ring_output(message, command):
                      f'{s}\n',
                      reply_markup=menu,
                      parse_mode='html')
+
+
+@bot.message_handler(commands=['inverse'])
+def inverse_input_ring(message):
+    m = bot.send_message(message.chat.id, 'Введите модуль кольца:')
+    bot.register_next_step_handler(m, inverse_input_element)
+
+
+def inverse_input_element(message):
+    try:
+        n = int(message.text.strip())
+    except ValueError:
+        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    if n >= MAX_MODULO or n < 2:
+        bot.send_message(message.chat.id, f'Ограничение: 2 < n < {MAX_MODULO}', reply_markup=menu)
+        return
+    m = bot.send_message(message.chat.id, 'Введите элемент, для которого требуется найти обратный:')
+    bot.register_next_step_handler(m, inverse_output, modulo=n)
+
+
+def inverse_output(message, modulo):
+    try:
+        n = int(message.text.strip())
+    except ValueError:
+        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    n = n % modulo
+    try:
+        result = find_inverse(n, modulo)
+    except ArithmeticError:
+        bot.send_message(
+            message.chat.id,
+            f'У {n} <b>нет</b> обратного в кольце Z/{modulo}\n'
+            f'Так как НОД({n}, {modulo}) > 1',
+            parse_mode='html'
+        )
+    else:
+        bot.send_message(message.chat.id, f'{result}')
 
 
 if __name__ == '__main__':
