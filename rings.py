@@ -61,9 +61,9 @@ def defactorize(factorization: Dict[int, int]) -> int:
     :param factorization: number representation in product of prime powers
     :return: integer equivalent for factorization
     """
-    n = 0
+    n = 1
     for k, v in factorization.items():
-        n += k ** v
+        n *= k ** v
     return n
 
 
