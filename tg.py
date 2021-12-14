@@ -69,10 +69,10 @@ def send_help(message):
     bot.send_message(message.chat.id,
                      ('/det для нахождения определителя матрицы (не более чем 8x8).\n'
                       '/logic для построения таблицы истинности логического выражения.\n'
-                      '/idempotents для поиска идемпотентных элементов в Z/n\n'
-                      '/nilpotents для поиска нильпотентных элементов в Z/n\n'
-                      '/inverse для поиска обратного элемента в Z/n'
-                      'Описание допустимых логических операторов:\n'
+                      '/idempotents для поиска идемпотентных элементов в Z/n.\n'
+                      '/nilpotents для поиска нильпотентных элементов в Z/n.\n'
+                      '/inverse для поиска обратного элемента в Z/n.\n\n'
+                      '<u>Описание допустимых логических операторов</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
 
@@ -147,7 +147,7 @@ def ring_output(message, command):
         bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
         return
     if n >= MAX_MODULO or n < 2:
-        bot.send_message(message.chat.id, f'Ограничение: 2 < n < {MAX_MODULO}', reply_markup=menu)
+        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {MAX_MODULO:E}', reply_markup=menu)
         return
     if command == 'idempotents':
         result = find_idempotents(n)
@@ -179,7 +179,7 @@ def inverse_input_element(message):
         bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
         return
     if n >= MAX_MODULO or n < 2:
-        bot.send_message(message.chat.id, f'Ограничение: 2 < n < {MAX_MODULO}', reply_markup=menu)
+        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {MAX_MODULO:E}', reply_markup=menu)
         return
     m = bot.send_message(message.chat.id, 'Введите элемент, для которого требуется найти обратный:')
     bot.register_next_step_handler(m, inverse_output, modulo=n)
