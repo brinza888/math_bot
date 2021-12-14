@@ -24,10 +24,14 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
+from rings import *
 
 
 # max size available for matrix is
 MAX_MATRIX = 8
+
+# max rings modulo
+MAX_MODULO = 10**15
 
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
@@ -43,6 +47,8 @@ with open('token.txt') as tk:  # attempt to read api token
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/logic'))
 menu.add(KeyboardButton('/det'))
+menu.add(KeyboardButton('/idempotents'))
+menu.add(KeyboardButton('/nilpotents'))
 menu.add(KeyboardButton('/help'))
 
 
@@ -62,6 +68,8 @@ def send_help(message):
     bot.send_message(message.chat.id,
                      ('/det для нахождения определителя матрицы (не более чем 8x8).\n'
                       '/logic для построения таблицы истинности логического выражения.\n'
+                      '/idempotents для поиска идемпотентных элементов в Z/n\n'
+                      '/nilpotents для поиска нильпотентных элементов в Z/n\n'
                       'Описание допустимых логических операторов:\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -69,8 +77,8 @@ def send_help(message):
 
 @bot.message_handler(commands=['det'])
 def det(message):
-    send_matrix = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
-    bot.register_next_step_handler(send_matrix, matrix_input, action='det')
+    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, matrix_input, action='det')
 
 
 def calc_det(message, action, matrix):
@@ -108,8 +116,8 @@ def matrix_input(message, action):
 
 @bot.message_handler(commands=['logic'])
 def logic_input(message):
-    send_logic = bot.send_message(message.chat.id, 'Введите логическое выражение:', reply_markup=hide_menu)
-    bot.register_next_step_handler(send_logic, logic_output)
+    m = bot.send_message(message.chat.id, 'Введите логическое выражение:', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, logic_output)
 
 
 def logic_output(message):
@@ -122,6 +130,38 @@ def logic_output(message):
         bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
     except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
+
+
+@bot.message_handler(commands=['idempotents', 'nilpotents'])
+def ring_input(message):
+    m = bot.send_message(message.chat.id, 'Введите модуль кольца:')
+    bot.register_next_step_handler(m, ring_output, command=message.text[1:])
+
+
+def ring_output(message, command):
+    try:
+        n = int(message.text.strip())
+        if n >= MAX_MODULO or n < 2:
+            bot.send_message(message.chat.id, f'Ограничение: 2 < n < {MAX_MODULO}', reply_markup=menu)
+            return
+    except ValueError:
+        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    if command == 'idempotents':
+        result = find_idempotents(n)
+        title = 'Идемпотенты'
+    elif command == 'nilpotents':
+        result = find_nilpotents(n)
+        title = 'Нильпотенты'
+    else:
+        return
+    s = '\n'.join([str(x) for x in result])
+    bot.send_message(message.chat.id,
+                     f'<b> {title} в Z/{n}</b>\n'
+                     f'Количество: {len(result)}\n\n'
+                     f'{s}\n',
+                     reply_markup=menu,
+                     parse_mode='html')
 
 
 if __name__ == '__main__':
