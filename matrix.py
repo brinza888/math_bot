@@ -70,6 +70,30 @@ class Matrix:
             result += ','.join([str(x) for x in row]) + ';'
         return int.from_bytes(hashlib.sha256(result.encode()).digest(), "little")
 
+    def __repr__(self):
+        return '\n'.join([
+            '\t'.join([f'{x:6.3f}' for x in row])
+            for row in self.matrix
+        ])
+
+    def __or__(self, other):  # vertical concatenation
+        if other.m != self.m:
+            raise SizesMatchError("Vertical concatenation works with same rows count")
+        new_matrix = [[] for _ in range(self.m)]
+        for i in range(self.m):
+            new_matrix[i] = self.matrix[i] + other.matrix[i]
+        new = Matrix(self.m, self.n + other.n)
+        new.fill(new_matrix)
+        return new
+
+    def __xor__(self, other):  # horizontal concatenation
+        if other.n != self.n:
+            raise SizesMatchError("Horizontal concatenation works with same columns count")
+        new_matrix = self.matrix + other.matrix
+        new = Matrix(self.m + other.m, self.n)
+        new.fill(new_matrix)
+        return new
+
     def fill(self, lst: List[List[Union[int, float]]]):
         rows = len(lst)
         if rows != self.m:
@@ -110,13 +134,20 @@ class Matrix:
 
     @classmethod
     def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
-        m = len(lst)
-        if isinstance(lst[0], list):
-            n = len(lst[0])
-        else:
-            n = 1
-        matrix = Matrix(m, n)
+        matrix = Matrix(len(lst), len(lst[0]))
         matrix.fill(lst)
+        return matrix
+
+    @classmethod
+    def row(cls, lst: List[float]) -> 'Matrix':
+        matrix = Matrix(1, len(lst))
+        matrix.fill([lst])
+        return matrix
+
+    @classmethod
+    def column(cls, lst: List[float]) -> 'Matrix':
+        matrix = Matrix(len(lst), 1)
+        matrix.fill([[x] for x in lst])
         return matrix
 
     @classmethod
