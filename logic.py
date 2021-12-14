@@ -81,9 +81,11 @@ def calculate(tokens, variables):
     return stack[-1]
 
 
-def build_table(s):
+def build_table(s, var_limit=8):
     tokens, variables = shunting_yard(s)  # kowalski analysis
     n = len(variables)
+    if n > var_limit:
+        raise ValueError("Variables limit reached")
     table = []
     for i in range(2 ** n):
         values = [int(x) for x in bin(i)[2:].rjust(n, '0')]

@@ -29,6 +29,9 @@ from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 # max size available for matrix is
 MAX_MATRIX = 8
 
+# max variables count in logic expression
+MAX_VARS = 7
+
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
@@ -114,7 +117,7 @@ def logic_input(message):
 
 def logic_output(message):
     try:
-        table, variables = build_table(message.text)
+        table, variables = build_table(message.text, MAX_VARS)
         out = StringIO()  # abstract file (file-object)
         print(*variables, 'F', file=out, sep=' '*2)
         for row in table:
@@ -122,6 +125,8 @@ def logic_output(message):
         bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
     except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
+    except ValueError:
+        bot.send_message(message.chat.id, f"Ограничение по кол-ву переменных: {MAX_VARS}")
 
 
 if __name__ == '__main__':
