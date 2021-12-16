@@ -36,6 +36,7 @@ MAX_VARS = 7
 # max rings modulo
 MAX_MODULO = 10**15
 MAX_ELEMENTS = 101
+FACTORIZE_MAX = 10**12
 
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
@@ -212,6 +213,29 @@ def inverse_output(message, modulo):
         )
     else:
         bot.send_message(message.chat.id, f'{result}')
+
+
+@bot.message_handler(commands=["factorize"])
+def factorize_input(message):
+    m = bot.send_message(message.chat.id, 'Введите число:')
+    bot.register_next_step_handler(m, factorize_output)
+
+
+def factorize_output(message):
+    try:
+        n = int(message.text.strip())
+    except ValueError:
+        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    if n < 2 or n > FACTORIZE_MAX:
+        bot.send_message(
+            message.chat.id,
+            f'Разложение доступно для положительных целых чисел n: 2 <= n <= {FACTORIZE_MAX:E}'
+        )
+    else:
+        fn = factorize(n)
+        result = f'{n} = ' + factorize_str(fn)
+        bot.send_message(message.chat.id, result)
 
 
 if __name__ == '__main__':
