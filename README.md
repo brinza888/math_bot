@@ -7,6 +7,11 @@ Licensed under GNU GPL-2.0-or-later
 Bot for Telegram that help you to solve some math problems. Now it can solve:
 - Find determinant of square matrix (max size is 8x8)
 - Build truth table for any logic expression
+- Find GCD and solve Diofant linear equation
+- Find factorization for number
+- Find modular inverse
+- Find idempotent elements in Z/n ring
+- Find nilpotent elements in Z/n ring
 
 ## Installation
 1. Create bot account in telegram using @BotFather
