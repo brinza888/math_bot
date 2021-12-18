@@ -55,6 +55,8 @@ menu.add(KeyboardButton('/det'))
 menu.add(KeyboardButton('/idempotents'))
 menu.add(KeyboardButton('/nilpotents'))
 menu.add(KeyboardButton('/inverse'))
+menu.add(KeyboardButton('/factorize'))
+menu.add(KeyboardButton('/euclid'))
 menu.add(KeyboardButton('/help'))
 
 
@@ -76,8 +78,10 @@ def send_help(message):
                       '/logic для построения таблицы истинности логического выражения.\n'
                       '/idempotents для поиска идемпотентных элементов в Z/n.\n'
                       '/nilpotents для поиска нильпотентных элементов в Z/n.\n'
-                      '/inverse для поиска обратного элемента в Z/n.\n\n'
-                      '<u>Описание допустимых логических операторов</u>\n'
+                      '/inverse для поиска обратного элемента в Z/n.\n'
+                      '/factorize для разложения натурального числа в простые.\n'
+                      '/euclid НОД двух чисел и решения Диофантового уравнения.\n\n'
+                      '<u>Описание допустимых логических операторов в /logic</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
 
@@ -215,7 +219,7 @@ def inverse_output(message, modulo):
         bot.send_message(message.chat.id, f'{result}')
 
 
-@bot.message_handler(commands=["factorize"])
+@bot.message_handler(commands=['factorize'])
 def factorize_input(message):
     m = bot.send_message(message.chat.id, 'Введите число:')
     bot.register_next_step_handler(m, factorize_output)
@@ -236,6 +240,28 @@ def factorize_output(message):
         fn = factorize(n)
         result = f'{n} = ' + factorize_str(fn)
         bot.send_message(message.chat.id, result)
+
+
+@bot.message_handler(commands=['euclid'])
+def euclid_input(message):
+    m = bot.send_message(message.chat.id, 'Введите два числа через пробел:')
+    bot.register_next_step_handler(m, euclid_output)
+
+
+def euclid_output(message):
+    try:
+        a, b = map(int, message.text.strip().split(" "))
+    except ValueError:
+        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    d, x, y = ext_gcd(a, b)
+    result = (f'НОД({a}, {b}) = {d}\n\n'
+              f'<u>Решение уравнения:</u>\n{a}*x + {b}*y <b>= {d}</b>\n'
+              f'x = {x}\ny = {y}\n\n'
+              f'<u>Внимание</u>\n'
+              f'<b>Обращайте внимание на вид уравнения!</b>\n'
+              f'Решается уравнение вида ax + by = НОД(a, b)!')
+    bot.send_message(message.chat.id, result, parse_mode='html')
 
 
 if __name__ == '__main__':
