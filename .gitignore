@@ -2,3 +2,4 @@ token.txt
 venv
 __pycache__
 .idea
+*.db

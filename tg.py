@@ -25,6 +25,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 from rings import *
+from statistics import log_function_call
 
 
 # max size available for matrix is
@@ -92,6 +93,7 @@ def det(message):
     bot.register_next_step_handler(m, matrix_input, action='det')
 
 
+@log_function_call
 def calc_det(message, action, matrix):
     try:
         answer = matrix.det()
@@ -99,6 +101,7 @@ def calc_det(message, action, matrix):
         bot.reply_to(message, 'Невозможно рассчитать определитель для не квадратной матрицы!', reply_markup=menu)
     else:
         bot.reply_to(message, f'{answer}', reply_markup=menu)
+        return f'{answer}'
 
 
 action_mapper = {
@@ -131,6 +134,7 @@ def logic_input(message):
     bot.register_next_step_handler(m, logic_output)
 
 
+@log_function_call
 def logic_output(message):
     try:
         table, variables = build_table(message.text, MAX_VARS)
@@ -139,6 +143,7 @@ def logic_output(message):
         for row in table:
             print(*row, file=out, sep=' '*2)
         bot.send_message(message.chat.id, f'<code>{out.getvalue()}</code>', parse_mode='html', reply_markup=menu)
+        return f'<code>{out.getvalue()}</code>'
     except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
     except ValueError:
