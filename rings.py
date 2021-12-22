@@ -135,7 +135,7 @@ def find_idempotents(n: int) -> list:
     rings_count = len(factored_rings)
     for element in product((0, 1), repeat=rings_count):
         e, _ = solve_comparisons({modulo: reminder for modulo, reminder in zip(factored_rings, element)})
-        result.append(e)
+        result.append((element, e))
     return result
 
 
