@@ -161,7 +161,7 @@ def ring_output(message, command):
         bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {MAX_MODULO:E}', reply_markup=menu)
         return
     if command == 'idempotents':
-        result = find_idempotents(n)
+        result = [f'{row} -> {el}' for row, el in find_idempotents(n)]
         title = 'Идемпотенты'
     elif command == 'nilpotents':
         result = find_nilpotents(n)
