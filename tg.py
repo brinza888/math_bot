@@ -26,6 +26,7 @@ from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 from rings import *
 from statistics import log_function_call
+from models import create_all
 
 
 # max size available for matrix is
@@ -48,6 +49,9 @@ if not os.path.isfile('token.txt'):  # check if token.txt exists
 
 with open('token.txt') as tk:  # attempt to read api token
     bot = telebot.TeleBot(tk.read().strip())
+
+if not os.path.isfile('bot.db'):
+    create_all()
 
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
