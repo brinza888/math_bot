@@ -1,6 +1,7 @@
 from functools import wraps
 
 from models import User, LogRecord, get_db, get_user, close_db
+from config import Config
 
 
 def log_function_call(log_unit_name: str):
@@ -16,7 +17,8 @@ def log_function_call(log_unit_name: str):
                 result = func(message, *args, **kwargs)
             except Exception as ex:
                 info['exception'] = str(ex)
-                raise ex
+                if Config.DEBUG:
+                    raise ex
             else:
                 info['result'] = result
                 return result

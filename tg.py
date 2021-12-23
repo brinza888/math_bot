@@ -15,18 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import os
-import sys
 from io import StringIO
 
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
+from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 from rings import *
 from statistics import log_function_call
-from models import create_all
 
 
 # max size available for matrix is
@@ -43,15 +41,7 @@ FACTORIZE_MAX = 10**12
 # generate supported operators description
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
-if not os.path.isfile('token.txt'):  # check if token.txt exists
-    print('Bot API token should be passed in token.txt file', file=sys.stderr)
-    exit(1)
-
-with open('token.txt') as tk:  # attempt to read api token
-    bot = telebot.TeleBot(tk.read().strip())
-
-if not os.path.isfile('bot.db'):
-    create_all()
+bot = telebot.TeleBot(Config.BOT_TOKEN)
 
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
