@@ -27,22 +27,10 @@ from rings import *
 from statistics import log_function_call
 
 
-# max size available for matrix is
-MAX_MATRIX = 8
-
-# max variables count in logic expression
-MAX_VARS = 7
-
-# max rings modulo
-MAX_MODULO = 10**15
-MAX_ELEMENTS = 101
-FACTORIZE_MAX = 10**12
-
-# generate supported operators description
-ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
-
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
+# generate supported logic operators description
+ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/logic'))
@@ -132,7 +120,7 @@ def logic_input(message):
 @log_function_call('logic')
 def logic_output(message):
     try:
-        table, variables = build_table(message.text, MAX_VARS)
+        table, variables = build_table(message.text, Config.MAX_VARS)
         out = StringIO()  # abstract file (file-object)
         print(*variables, 'F', file=out, sep=' '*2)
         for row in table:
@@ -143,7 +131,7 @@ def logic_output(message):
     except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
     except ValueError:
-        bot.send_message(message.chat.id, f"Ограничение по кол-ву переменных: {MAX_VARS}")
+        bot.send_message(message.chat.id, f"Ограничение по кол-ву переменных: {Config.MAX_VARS}")
 
 
 @bot.message_handler(commands=['idempotents', 'nilpotents'])
@@ -159,8 +147,8 @@ def ring_output(message, command):
     except ValueError:
         bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
         return
-    if n >= MAX_MODULO or n < 2:
-        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {MAX_MODULO:E}', reply_markup=menu)
+    if n >= Config.MAX_MODULO or n < 2:
+        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {Config.MAX_MODULO:E}', reply_markup=menu)
         return
     if command == 'idempotents':
         result = [f'{row} -> {el}' for row, el in find_idempotents(n)]
@@ -170,7 +158,7 @@ def ring_output(message, command):
         title = 'Нильпотенты'
     else:
         return
-    if len(result) > MAX_ELEMENTS:
+    if len(result) > Config.MAX_ELEMENTS:
         s = 'Элементов слишком много чтобы их вывести...'
     else:
         s = '\n'.join([str(x) for x in result])
@@ -198,8 +186,8 @@ def inverse_input_element(message):
     except ValueError:
         bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
         return
-    if n >= MAX_MODULO or n < 2:
-        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {MAX_MODULO:E}', reply_markup=menu)
+    if n >= Config.MAX_MODULO or n < 2:
+        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {Config.MAX_MODULO:E}', reply_markup=menu)
         return
     m = bot.send_message(message.chat.id, 'Введите элемент, для которого требуется найти обратный:')
     bot.register_next_step_handler(m, inverse_output, modulo=n)
@@ -239,10 +227,10 @@ def factorize_output(message):
     except ValueError:
         bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
         return
-    if n < 2 or n > FACTORIZE_MAX:
+    if n < 2 or n > Config.FACTORIZE_MAX:
         bot.send_message(
             message.chat.id,
-            f'Разложение доступно для положительных целых чисел n: 2 <= n <= {FACTORIZE_MAX:E}'
+            f'Разложение доступно для положительных целых чисел n: 2 <= n <= {Config.FACTORIZE_MAX:E}'
         )
     else:
         fn = factorize(n)
