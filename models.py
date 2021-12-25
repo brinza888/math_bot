@@ -40,7 +40,7 @@ class LogRecord (Base):
     in_chat_id = Column(Integer)
 
     command = Column(String(128))
-    timestamp = Column(DateTime, default=datetime.now())
+    timestamp = Column(DateTime, default=datetime.now)
     info = Column(Text, default="{}")
 
     def __init__(self, *args, **kwargs):
