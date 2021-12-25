@@ -1,5 +1,4 @@
 import json
-
 from datetime import datetime
 from functools import wraps
 
@@ -7,8 +6,10 @@ from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, scoped_session
 
+from config import Config
 
-engine = create_engine("sqlite:///bot.db")
+
+engine = create_engine(Config.DATABASE_URI)
 
 Base = declarative_base()
 session_factory = sessionmaker(engine)
@@ -39,7 +40,7 @@ class LogRecord (Base):
     in_chat_id = Column(Integer)
 
     command = Column(String(128))
-    timestamp = Column(DateTime, default=datetime.now())
+    timestamp = Column(DateTime, default=datetime.now)
     info = Column(Text, default="{}")
 
     def __init__(self, *args, **kwargs):
