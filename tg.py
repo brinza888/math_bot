@@ -77,6 +77,9 @@ def det(message):
 
 @log_function_call('det')
 def calc_det(message, action, matrix):
+    if matrix.n > Config.MAX_MATRIX:
+        bot.reply_to(message, 'Детерминант матрицы доступен для матриц размера не более чем 8x8!', reply_markup=menu)
+        return
     try:
         result = matrix.det()
     except SquareMatrixRequired:
