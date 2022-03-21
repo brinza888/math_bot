@@ -142,7 +142,7 @@ def find_idempotents(n: int) -> list:
 
 
 if __name__ == '__main__':
-    print("Copyright (C) 2021 Ilya Bezrukov")
+    print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     a, n = map(int, input("Элемент и модуль кольца: ").split())
     try:
