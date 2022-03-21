@@ -39,6 +39,6 @@ class Config:
     # max rings modulo
     MAX_MODULO = int(os.getenv("MAX_MODULO", 10**15))
     # max elements to list in message
-    MAX_ELEMENTS = int(os.getenv("MAX_VARS", 101))
+    MAX_ELEMENTS = int(os.getenv("MAX_ELEMENTS", 101))
     # max number that can be factorized
-    FACTORIZE_MAX = int(os.getenv("MAX_VARS", 10 ** 12))
+    FACTORIZE_MAX = int(os.getenv("FACTORIZE_MAX", 10 ** 12))
