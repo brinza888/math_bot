@@ -134,6 +134,9 @@ class Matrix:
             sgn = -sgn
         return det_value
 
+    def make_rref(self):
+        pass
+
     @classmethod
     def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
         matrix = Matrix(len(lst), len(lst[0]))
