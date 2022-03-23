@@ -26,7 +26,7 @@ from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 from rings import *
-from safe_eval import safe_eval
+from safe_eval import safe_eval, LimitError
 from statistics import log_function_call
 
 
@@ -281,10 +281,14 @@ def calc_input(message):
 def calc_output(message):
     try:
         answer = str(safe_eval(message.text))
-    except SyntaxError:
+    except (SyntaxError, TypeError):
         bot.send_message(message.chat.id, 'Синтаксическая ошибка в выражении', reply_markup=menu)
-    except ValueError:
+    except LimitError:
         bot.send_message(message.chat.id, 'Достигнут лимит возможной сложности вычислений', reply_markup=menu)
+    except ZeroDivisionError:
+        bot.send_message(message.chat.id, 'Деление на 0 не определено')
+    except ArithmeticError:
+        bot.send_message(message.chat.id, 'Арифметическая ошибка')
     else:
         bot.send_message(message.chat.id, answer, parse_mode='html')
         return answer

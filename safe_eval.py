@@ -22,6 +22,21 @@ import operator as op
 from functools import wraps
 
 
+class LimitError (ValueError):
+    """ Base class for limit exceptions """
+    pass
+
+
+class ExpressionLimitError (LimitError):
+    """ Raises if length of expression more than length limit """
+    pass
+
+
+class ArgumentLimitError (LimitError):
+    """ Raises if numeric argument more than argument limit for this operation """
+    pass
+
+
 def args_limit(*limits):
     def decorator(func):
         @wraps(func)
@@ -30,7 +45,7 @@ def args_limit(*limits):
             for arg, limit in zip(args, limits):
                 check = check and (arg != -1 and arg > limit)
             if check:
-                raise ValueError("Argument limit reached!")
+                raise ArgumentLimitError("Argument size limit exceeded")
             return func(*args, **kwargs)
         return wrapper
     return decorator
@@ -57,7 +72,7 @@ operators = {
 
 def safe_eval(expr):
     if len(expr) >= LINE_LIMIT:
-        raise ValueError(f"Eval string length limit reached!")
+        raise ExpressionLimitError("Expression size limit exceeded")
     return _eval(ast.parse(expr, mode='eval').body)
 
 
@@ -78,8 +93,8 @@ if __name__ == '__main__':
     while True:
         try:
             print(safe_eval(input("> ")))
-        except ValueError as ex:
-            print(ex)
+        except (ValueError, SyntaxError, TypeError) as ex:
+            print(ex.__class__.__name__, ex)
         except KeyboardInterrupt:
             print("Bye!")
             break
