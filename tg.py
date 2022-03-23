@@ -26,6 +26,7 @@ from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired
 from rings import *
+from safe_eval import safe_eval
 from statistics import log_function_call
 
 
@@ -43,6 +44,7 @@ menu.add(KeyboardButton('/inverse'))
 menu.add(KeyboardButton('/factorize'))
 menu.add(KeyboardButton('/euclid'))
 menu.add(KeyboardButton('/help'))
+menu.add(KeyboardButton('/calc'))
 
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
@@ -65,7 +67,8 @@ def send_help(message):
                       '/nilpotents для поиска нильпотентных элементов в Z/n.\n'
                       '/inverse для поиска обратного элемента в Z/n.\n'
                       '/factorize для разложения натурального числа в простые.\n'
-                      '/euclid НОД двух чисел и решения Диофантового уравнения.\n\n'
+                      '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
+                      '/calc калькулятор выражений\n\n'
                       '<u>Описание допустимых логических операторов в /logic</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -266,6 +269,25 @@ def euclid_output(message):
               f'Решается уравнение вида ax + by = НОД(a, b)!')
     bot.send_message(message.chat.id, answer, parse_mode='html')
     return answer
+
+
+@bot.message_handler(commands=['calc'])
+def calc_input(message):
+    m = bot.send_message(message.chat.id, 'Введите выражение:')
+    bot.register_next_step_handler(m, calc_output)
+
+
+@log_function_call('calc')
+def calc_output(message):
+    try:
+        answer = str(safe_eval(message.text))
+    except SyntaxError:
+        bot.send_message(message.chat.id, 'Синтаксическая ошибка в выражении', reply_markup=menu)
+    except ValueError:
+        bot.send_message(message.chat.id, 'Достигнут лимит возможной сложности вычислений', reply_markup=menu)
+    else:
+        bot.send_message(message.chat.id, answer, parse_mode='html')
+        return answer
 
 
 if __name__ == '__main__':
