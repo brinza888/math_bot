@@ -43,6 +43,7 @@ menu.add(KeyboardButton('/inverse'))
 menu.add(KeyboardButton('/factorize'))
 menu.add(KeyboardButton('/euclid'))
 menu.add(KeyboardButton('/help'))
+menu.add(KeyboardButton('/rref'))
 
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
@@ -65,7 +66,8 @@ def send_help(message):
                       '/nilpotents для поиска нильпотентных элементов в Z/n.\n'
                       '/inverse для поиска обратного элемента в Z/n.\n'
                       '/factorize для разложения натурального числа в простые.\n'
-                      '/euclid НОД двух чисел и решения Диофантового уравнения.\n\n'
+                      '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
+                      '/rref Нахождение ступеньчатого вида матрицы.\n\n'
                       '<u>Описание допустимых логических операторов в /logic</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -264,6 +266,24 @@ def euclid_output(message):
               f'<u>Внимание</u>\n'
               f'<b>Обращайте внимание на вид уравнения!</b>\n'
               f'Решается уравнение вида ax + by = НОД(a, b)!')
+    bot.send_message(message.chat.id, answer, parse_mode='html')
+    return answer
+
+
+@bot.message_handler(commands=['rref'])
+def rref_input(message):
+    m = matrix_input(message, )
+    bot.register_next_step_handler(m, rref_output)
+
+
+@log_function_call('rref')
+def rref_output(message):
+    try:
+        matrix = Matrix([list(map(float, input().split())) for i in range(n)])
+    except ValueError:
+        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        return
+    answer = matrix.make_rref()
     bot.send_message(message.chat.id, answer, parse_mode='html')
     return answer
 
