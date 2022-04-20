@@ -134,7 +134,7 @@ class Matrix:
             sgn = -sgn
         return det_value
 
-    def make_rref(self) -> 'Matrix':
+    def inverse(self) -> 'Matrix':
         sofm = self.n
         id_matrix = Matrix(self.m, self.n)
         for i in range(sofm):      # Constructing identity matrix
@@ -169,7 +169,7 @@ class Matrix:
             for j in range(sofm):
                 id_matrix.matrix[i][j] = big_matrix.matrix[i][j + sofm]
 
-        return id_matrix
+        return self
 
     @classmethod
     def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
@@ -209,4 +209,4 @@ if __name__ == '__main__':
     matrix = [list(map(float, input().split())) for i in range(n)]
     A = Matrix(n, n)
     A.fill(matrix)
-    print(A.make_rref())
+    print(A.inverse())

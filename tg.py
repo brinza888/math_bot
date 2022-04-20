@@ -42,8 +42,8 @@ menu.add(KeyboardButton('/nilpotents'))
 menu.add(KeyboardButton('/inverse'))
 menu.add(KeyboardButton('/factorize'))
 menu.add(KeyboardButton('/euclid'))
+menu.add(KeyboardButton('/inverseOfMatrix'))
 menu.add(KeyboardButton('/help'))
-menu.add(KeyboardButton('/rref'))
 
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
@@ -67,7 +67,7 @@ def send_help(message):
                       '/inverse для поиска обратного элемента в Z/n.\n'
                       '/factorize для разложения натурального числа в простые.\n'
                       '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
-                      '/rref Нахождение ступеньчатого вида матрицы.\n\n'
+                      '/inverseOfMatrix Нахождение обратной матрицы.\n\n'
                       '<u>Описание допустимых логических операторов в /logic</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -94,8 +94,29 @@ def calc_det(message, action, matrix):
         return answer
 
 
+@bot.message_handler(commands=['inverseOfMatrix'])
+def inv_input(message):
+    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, matrix_input, action='inverse')
+
+
+@log_function_call('inverseOfMatrix')
+def calc_inv(message, action, matrix):
+    try:
+        result = matrix.inverse()
+    except ZeroDivisionError:
+        bot.send_message(message.chat.id, 'Обратной матрицы не существует!', reply_markup=menu)
+        return
+    else:
+        answer = "Обратная матрица:\n" + str(result)
+        bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+        return answer
+
+
+
 action_mapper = {
-    'det': calc_det
+    'det': calc_det,
+    'inverse': calc_inv
 }
 
 
@@ -266,24 +287,6 @@ def euclid_output(message):
               f'<u>Внимание</u>\n'
               f'<b>Обращайте внимание на вид уравнения!</b>\n'
               f'Решается уравнение вида ax + by = НОД(a, b)!')
-    bot.send_message(message.chat.id, answer, parse_mode='html')
-    return answer
-
-
-@bot.message_handler(commands=['rref'])
-def rref_input(message):
-    m = matrix_input(message, )
-    bot.register_next_step_handler(m, rref_output)
-
-
-@log_function_call('rref')
-def rref_output(message):
-    try:
-        matrix = Matrix([list(map(float, input().split())) for i in range(n)])
-    except ValueError:
-        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
-        return
-    answer = matrix.make_rref()
     bot.send_message(message.chat.id, answer, parse_mode='html')
     return answer
 
