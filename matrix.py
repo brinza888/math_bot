@@ -156,6 +156,8 @@ class Matrix:
                     continue
                 big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / temp.matrix[k][k]
             for i in range(k + 1, temp.m):
+                if big_matrix.matrix[k][k] == 0:
+                    continue
                 K = big_matrix.matrix[i][k] / big_matrix.matrix[k][k]
                 for j in range(2 * temp.n):
                     big_matrix.matrix[i][j] = big_matrix.matrix[i][j] - big_matrix.matrix[k][j] * K
