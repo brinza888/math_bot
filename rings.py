@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import *
-from functools import reduce
+from functools import reduce, lru_cache
 from math import gcd
 from itertools import product
 
@@ -38,6 +38,7 @@ def ext_gcd(a, b):
     return d, x, y
 
 
+@lru_cache
 def factorize(n: int) -> Dict[int, int]:
     """
     Factorize number in product of prime numbers
