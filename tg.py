@@ -24,7 +24,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 
 from config import *
 from logic import build_table, OPS
-from matrix import Matrix, SizesMatchError, SquareMatrixRequired
+from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
 from rings import *
 from statistics import log_function_call
 
@@ -41,8 +41,9 @@ menu.add(KeyboardButton('/nilpotents'))
 menu.add(KeyboardButton('/inverse'))
 menu.add(KeyboardButton('/factorize'))
 menu.add(KeyboardButton('/euclid'))
+menu.add(KeyboardButton('/ref'))
 menu.add(KeyboardButton('/rref'))
-menu.add(KeyboardButton('/inverseOfMatrix'))
+menu.add(KeyboardButton('/MInverse'))
 menu.add(KeyboardButton('/help'))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
@@ -66,8 +67,9 @@ def send_help(message):
                       '/inverse для поиска обратного элемента в Z/n.\n'
                       '/factorize для разложения натурального числа в простые.\n'
                       '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
+                      '/ref для поиска ступенчатого вида матрицы.\n'
                       '/rref для поиска приведённого ступенчатого вида матрицы.\n'
-                      '/inverseOfMatrix для поиска обратной матрицы.\n\n'
+                      '/MInverse для поиска обратной матрицы.\n\n'
                       '<u>Описание допустимых логических операторов в /logic</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -94,6 +96,20 @@ def calc_det(message, action, matrix):
         return answer
 
 
+@bot.message_handler(commands=['ref'])
+def ref_input(message):
+    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, matrix_input, action='ref')
+
+
+@log_function_call('ref')
+def calc_ref(message, action, matrix):
+    result = matrix.ref()
+    answer = f'Матрица в ступенчатом виде:\n{str(result)}'
+    bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+    return answer
+
+
 @bot.message_handler(commands=['rref'])
 def rref_input(message):
     m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
@@ -102,23 +118,23 @@ def rref_input(message):
 
 @log_function_call('rref')
 def calc_rref(message, action, matrix):
-    result = matrix.inverse_rref('rref')
+    result = matrix.rref()
     answer = f'Матрица в приведённом ступенчатом виде:\n{str(result)}'
     bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
     return answer
 
 
-@bot.message_handler(commands=['inverseOfMatrix'])
+@bot.message_handler(commands=['MInverse'])
 def inv_input(message):
     m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
-    bot.register_next_step_handler(m, matrix_input, action='inverse')
+    bot.register_next_step_handler(m, matrix_input, action='MInverse')
 
 
-@log_function_call('inverseOfMatrix')
+@log_function_call('MInverse')
 def calc_inv(message, action, matrix):
     try:
-        result = matrix.inverse_rref('inverse')
-    except ZeroDivisionError:
+        result = matrix.inverse()
+    except NonInvertibleMatrix:
         bot.send_message(message.chat.id, 'Обратной матрицы не существует!', reply_markup=menu)
         return
     else:
@@ -129,8 +145,9 @@ def calc_inv(message, action, matrix):
 
 action_mapper = {
     'det': calc_det,
+    'ref': calc_ref,
     'rref': calc_rref,
-    'inverse': calc_inv
+    'MInverse': calc_inv
 }
 
 

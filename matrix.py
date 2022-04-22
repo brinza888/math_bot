@@ -26,6 +26,10 @@ class SizesMatchError (ValueError):
     pass
 
 
+class NonInvertibleMatrix (ValueError):
+    pass
+
+
 class SquareMatrixRequired (ValueError):
     pass
 
@@ -134,45 +138,64 @@ class Matrix:
             sgn = -sgn
         return det_value
 
-    def inverse_rref(self, command) -> 'Matrix':
-        id_matrix = Matrix(self.m, self.n)
-        for i in range(self.m):      # Constructing identity matrix
+    def _gaussian_elimination(self) -> Tuple['Matrix', 'Matrix']:
+        id_matrix = Matrix.identity(self.m)
+        temp = Matrix.from_list(self.matrix)
+        for i in range(temp.m):      # Constructing identity matrix
             id_matrix.matrix[i][i] = 1
 
-        big_matrix = Matrix(self.m, 2 * self.n, 0)
-        for i in range(self.m):      # Merge of identity and initial matrix
-            for j in range(self.n):
-                big_matrix.matrix[i][j] = self.matrix[i][j]
-                big_matrix.matrix[i][j + self.n] = id_matrix.matrix[i][j]
+        big_matrix = Matrix(temp.m, 2 * temp.n, 0)
+        for i in range(temp.m):      # Merge of identity and initial matrix
+            for j in range(temp.n):
+                big_matrix.matrix[i][j] = temp.matrix[i][j]
+                big_matrix.matrix[i][j + temp.n] = id_matrix.matrix[i][j]
 
-        for k in range(self.m):    # Straight ahead (Lower left-hand corner jamming)
-            for i in range(2 * self.n):
-                big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / self.matrix[k][k]
-            for i in range(k + 1, self.m):
+        for k in range(temp.m):    # Straight ahead (Lower left-hand corner jamming)
+            for i in range(2 * temp.n):
+                if temp.matrix[k][k] == 0:
+                    continue
+                big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / temp.matrix[k][k]
+            for i in range(k + 1, temp.m):
                 K = big_matrix.matrix[i][k] / big_matrix.matrix[k][k]
-                for j in range(2 * self.n):
+                for j in range(2 * temp.n):
                     big_matrix.matrix[i][j] = big_matrix.matrix[i][j] - big_matrix.matrix[k][j] * K
-            for i in range(self.m):
-                for j in range(self.n):
-                    self.matrix[i][j] = big_matrix.matrix[i][j]
+            for i in range(temp.m):
+                for j in range(temp.n):
+                    temp.matrix[i][j] = big_matrix.matrix[i][j]
 
-        for k in range(self.m - 1, -1, -1):   # Reverse stroke (Top right-hand corner jamming)
-            for i in range(2 * self.n - 1, -1, -1):
-                big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / self.matrix[k][k]
+        for k in range(temp.m - 1, -1, -1):   # Reverse stroke (Top right-hand corner jamming)
+            for i in range(2 * temp.n - 1, -1, -1):
+                if temp.matrix[k][k] == 0:
+                    continue
+                big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / temp.matrix[k][k]
             for i in range(k - 1, -1, -1):
+                if big_matrix.matrix[k][k] == 0:
+                    continue
                 K = big_matrix.matrix[i][k] / big_matrix.matrix[k][k]
-                for j in range(2 * self.n - 1, -1, -1):
+                for j in range(2 * temp.n - 1, -1, -1):
                     big_matrix.matrix[i][j] = big_matrix.matrix[i][j] - big_matrix.matrix[k][j] * K
-        if command == 'rref':
-            for i in range(self.m):
-                for j in range(self.n):
-                    id_matrix.matrix[i][j] = big_matrix.matrix[i][j]
-        else:
-            for i in range(self.m):
-                for j in range(self.n):
-                    id_matrix.matrix[i][j] = big_matrix.matrix[i][j + self.n]
 
-        return id_matrix
+        return temp, big_matrix
+
+    def inverse(self):
+        if self.det() == 0:
+            raise NonInvertibleMatrix("Matrix is not invertible")
+        temp, big_matrix = self._gaussian_elimination()
+        for i in range(self.m):
+            for j in range(self.n):
+                temp.matrix[i][j] = big_matrix.matrix[i][j + self.n]
+        return temp
+
+    def ref(self):
+        temp, big_matrix = self._gaussian_elimination()
+        return temp
+
+    def rref(self):
+        temp, big_matrix = self._gaussian_elimination()
+        for i in range(self.m):
+            for j in range(self.n):
+                temp.matrix[i][j] = big_matrix.matrix[i][j]
+        return temp
 
     @classmethod
     def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
@@ -212,4 +235,4 @@ if __name__ == '__main__':
     matrix = [list(map(float, input().split())) for i in range(m)]
     A = Matrix(m, n)
     A.fill(matrix)
-    print(A.inverse_rref('0'))
+    print(A.ref())
