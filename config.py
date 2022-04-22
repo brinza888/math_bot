@@ -30,6 +30,7 @@ class Config:
     DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///bot.db")
     DEBUG = bool(int(os.getenv("DEBUG", 0)))
     BOT_TOKEN = os.getenv("BOT_TOKEN")
+    ADMINS = [int(x) for x in os.getenv("ADMINS", "").split()]
 
     # CALCULATION LIMITS
     # max matrix size

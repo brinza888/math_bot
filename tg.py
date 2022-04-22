@@ -28,6 +28,7 @@ from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleM
 from rings import *
 from safe_eval import safe_eval, LimitError
 from statistics import log_function_call
+from models import User, get_db
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
@@ -348,6 +349,20 @@ def calc_output(message):
     else:
         bot.send_message(message.chat.id, answer, parse_mode='html')
         return answer
+
+
+@bot.message_handler(commands=["broadcast", "bc"])
+def broadcast_input(message):
+    if message.from_user.id not in Config.ADMINS:
+        return
+    m = bot.send_message(message.chat.id, "Сообщение для рассылки:")
+    bot.register_next_step_handler(m, broadcast)
+
+
+def broadcast(message):
+    db = get_db()
+    for user in db.query(User).all():
+        bot.send_message(user.id, message.text)
 
 
 if __name__ == '__main__':
