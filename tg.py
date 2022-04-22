@@ -24,11 +24,10 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemo
 
 from config import *
 from logic import build_table, OPS
-from matrix import Matrix, SizesMatchError, SquareMatrixRequired
+from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
 from rings import *
 from safe_eval import safe_eval, LimitError
 from statistics import log_function_call
-
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
@@ -43,9 +42,11 @@ menu.add(KeyboardButton('/nilpotents'))
 menu.add(KeyboardButton('/inverse'))
 menu.add(KeyboardButton('/factorize'))
 menu.add(KeyboardButton('/euclid'))
+menu.add(KeyboardButton('/ref'))
+menu.add(KeyboardButton('/rref'))
+menu.add(KeyboardButton('/MInverse'))
 menu.add(KeyboardButton('/help'))
 menu.add(KeyboardButton('/calc'))
-
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
@@ -68,7 +69,10 @@ def send_help(message):
                       '/inverse для поиска обратного элемента в Z/n.\n'
                       '/factorize для разложения натурального числа в простые.\n'
                       '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
-                      '/calc калькулятор выражений\n\n'
+                      '/calc калькулятор выражений.\n'
+                      '/ref для поиска ступенчатого вида матрицы.\n'
+                      '/rref для поиска приведённого ступенчатого вида матрицы.\n'
+                      '/MInverse для поиска обратной матрицы.\n\n'
                       '<u>Описание допустимых логических операторов в /logic</u>\n'
                       f'{ops_description}'),
                      parse_mode='html')
@@ -95,8 +99,58 @@ def calc_det(message, action, matrix):
         return answer
 
 
+@bot.message_handler(commands=['ref'])
+def ref_input(message):
+    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, matrix_input, action='ref')
+
+
+@log_function_call('ref')
+def calc_ref(message, action, matrix):
+    result = matrix.ref()
+    answer = f'Матрица в ступенчатом виде:\n{str(result)}'
+    bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+    return answer
+
+
+@bot.message_handler(commands=['rref'])
+def rref_input(message):
+    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, matrix_input, action='rref')
+
+
+@log_function_call('rref')
+def calc_rref(message, action, matrix):
+    result = matrix.rref()
+    answer = f'Матрица в приведённом ступенчатом виде:\n{str(result)}'
+    bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+    return answer
+
+
+@bot.message_handler(commands=['MInverse'])
+def inv_input(message):
+    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
+    bot.register_next_step_handler(m, matrix_input, action='MInverse')
+
+
+@log_function_call('MInverse')
+def calc_inv(message, action, matrix):
+    try:
+        result = matrix.inverse()
+    except NonInvertibleMatrix:
+        bot.send_message(message.chat.id, 'Обратной матрицы не существует!', reply_markup=menu)
+        return
+    else:
+        answer = f'Обратная матрица:\n{str(result)}'
+        bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+        return answer
+
+
 action_mapper = {
-    'det': calc_det
+    'det': calc_det,
+    'ref': calc_ref,
+    'rref': calc_rref,
+    'MInverse': calc_inv
 }
 
 
@@ -130,9 +184,9 @@ def logic_output(message):
     try:
         table, variables = build_table(message.text, Config.MAX_VARS)
         out = StringIO()  # abstract file (file-object)
-        print(*variables, 'F', file=out, sep=' '*2)
+        print(*variables, 'F', file=out, sep=' ' * 2)
         for row in table:
-            print(*row, file=out, sep=' '*2)
+            print(*row, file=out, sep=' ' * 2)
         answer = f'<code>{out.getvalue()}</code>'
         bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
         return answer
