@@ -35,18 +35,20 @@ bot = telebot.TeleBot(Config.BOT_TOKEN)
 ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
-menu.add(KeyboardButton('/logic'))
-menu.add(KeyboardButton('/det'))
-menu.add(KeyboardButton('/idempotents'))
-menu.add(KeyboardButton('/nilpotents'))
-menu.add(KeyboardButton('/inverse'))
+menu.add(KeyboardButton('/help'))
+menu.add(KeyboardButton('/calc'))
 menu.add(KeyboardButton('/factorize'))
 menu.add(KeyboardButton('/euclid'))
+menu.add(KeyboardButton('/logic'))
+
+menu.add(KeyboardButton('/det'))
 menu.add(KeyboardButton('/ref'))
 menu.add(KeyboardButton('/rref'))
 menu.add(KeyboardButton('/MInverse'))
-menu.add(KeyboardButton('/help'))
-menu.add(KeyboardButton('/calc'))
+
+menu.add(KeyboardButton('/idempotents'))
+menu.add(KeyboardButton('/nilpotents'))
+menu.add(KeyboardButton('/inverse'))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
