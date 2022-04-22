@@ -26,6 +26,7 @@ from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
 from rings import *
+from safe_eval import safe_eval, LimitError
 from statistics import log_function_call
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
@@ -45,6 +46,7 @@ menu.add(KeyboardButton('/ref'))
 menu.add(KeyboardButton('/rref'))
 menu.add(KeyboardButton('/MInverse'))
 menu.add(KeyboardButton('/help'))
+menu.add(KeyboardButton('/calc'))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
@@ -67,6 +69,7 @@ def send_help(message):
                       '/inverse для поиска обратного элемента в Z/n.\n'
                       '/factorize для разложения натурального числа в простые.\n'
                       '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
+                      '/calc калькулятор выражений.\n'
                       '/ref для поиска ступенчатого вида матрицы.\n'
                       '/rref для поиска приведённого ступенчатого вида матрицы.\n'
                       '/MInverse для поиска обратной матрицы.\n\n'
@@ -320,6 +323,29 @@ def euclid_output(message):
               f'Решается уравнение вида ax + by = НОД(a, b)!')
     bot.send_message(message.chat.id, answer, parse_mode='html')
     return answer
+
+
+@bot.message_handler(commands=['calc'])
+def calc_input(message):
+    m = bot.send_message(message.chat.id, 'Введите выражение:')
+    bot.register_next_step_handler(m, calc_output)
+
+
+@log_function_call('calc')
+def calc_output(message):
+    try:
+        answer = str(safe_eval(message.text))
+    except (SyntaxError, TypeError):
+        bot.send_message(message.chat.id, 'Синтаксическая ошибка в выражении', reply_markup=menu)
+    except LimitError:
+        bot.send_message(message.chat.id, 'Достигнут лимит возможной сложности вычислений', reply_markup=menu)
+    except ZeroDivisionError:
+        bot.send_message(message.chat.id, 'Деление на 0 не определено')
+    except ArithmeticError:
+        bot.send_message(message.chat.id, 'Арифметическая ошибка')
+    else:
+        bot.send_message(message.chat.id, answer, parse_mode='html')
+        return answer
 
 
 if __name__ == '__main__':
