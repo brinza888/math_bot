@@ -134,42 +134,45 @@ class Matrix:
             sgn = -sgn
         return det_value
 
-    def inverse(self) -> 'Matrix':
-        sofm = self.n
+    def inverse_rref(self, command) -> 'Matrix':
         id_matrix = Matrix(self.m, self.n)
-        for i in range(sofm):      # Constructing identity matrix
+        for i in range(self.m):      # Constructing identity matrix
             id_matrix.matrix[i][i] = 1
 
         big_matrix = Matrix(self.m, 2 * self.n, 0)
-        for i in range(sofm):      # Merge of identity and initial matrix
-            for j in range(sofm):
+        for i in range(self.m):      # Merge of identity and initial matrix
+            for j in range(self.n):
                 big_matrix.matrix[i][j] = self.matrix[i][j]
-                big_matrix.matrix[i][j + sofm] = id_matrix.matrix[i][j]
+                big_matrix.matrix[i][j + self.n] = id_matrix.matrix[i][j]
 
-        for k in range(sofm):    # Straight ahead (Lower left-hand corner jamming)
-            for i in range(2 * sofm):
+        for k in range(self.m):    # Straight ahead (Lower left-hand corner jamming)
+            for i in range(2 * self.n):
                 big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / self.matrix[k][k]
-            for i in range(k + 1, sofm):
+            for i in range(k + 1, self.m):
                 K = big_matrix.matrix[i][k] / big_matrix.matrix[k][k]
-                for j in range(2 * sofm):
+                for j in range(2 * self.n):
                     big_matrix.matrix[i][j] = big_matrix.matrix[i][j] - big_matrix.matrix[k][j] * K
-            for i in range(sofm):
-                for j in range(sofm):
+            for i in range(self.m):
+                for j in range(self.n):
                     self.matrix[i][j] = big_matrix.matrix[i][j]
 
-        for k in range(sofm - 1, -1, -1):   # Reverse stroke (Top right-hand corner jamming)
-            for i in range(2 * sofm - 1, -1, -1):
+        for k in range(self.m - 1, -1, -1):   # Reverse stroke (Top right-hand corner jamming)
+            for i in range(2 * self.n - 1, -1, -1):
                 big_matrix.matrix[k][i] = big_matrix.matrix[k][i] / self.matrix[k][k]
             for i in range(k - 1, -1, -1):
                 K = big_matrix.matrix[i][k] / big_matrix.matrix[k][k]
-                for j in range(2 * sofm - 1, -1, -1):
+                for j in range(2 * self.n - 1, -1, -1):
                     big_matrix.matrix[i][j] = big_matrix.matrix[i][j] - big_matrix.matrix[k][j] * K
+        if command == 'rref':
+            for i in range(self.m):
+                for j in range(self.n):
+                    id_matrix.matrix[i][j] = big_matrix.matrix[i][j]
+        else:
+            for i in range(self.m):
+                for j in range(self.n):
+                    id_matrix.matrix[i][j] = big_matrix.matrix[i][j + self.n]
 
-        for i in range(sofm):
-            for j in range(sofm):
-                id_matrix.matrix[i][j] = big_matrix.matrix[i][j + sofm]
-
-        return self
+        return id_matrix
 
     @classmethod
     def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
@@ -204,9 +207,9 @@ class Matrix:
 if __name__ == '__main__':
     print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
-    n = int(input('Введите размер матрицы: '))
+    m, n = map(int, input('Введите размер матрицы: ').split())
     print('Введите матрицу: ')
-    matrix = [list(map(float, input().split())) for i in range(n)]
-    A = Matrix(n, n)
+    matrix = [list(map(float, input().split())) for i in range(m)]
+    A = Matrix(m, n)
     A.fill(matrix)
-    print(A.inverse())
+    print(A.inverse_rref('0'))
