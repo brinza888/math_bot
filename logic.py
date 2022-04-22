@@ -97,7 +97,7 @@ def build_table(s, var_limit=8):
 
 
 if __name__ == '__main__':
-    print("Copyright (C) 2021 Ilya Bezrukov")
+    print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     s = input('Expression: ')
     table, variables = build_table(s)
