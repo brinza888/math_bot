@@ -139,9 +139,9 @@ class Matrix:
         return det_value
 
     def _gaussian_elimination(self) -> Tuple['Matrix', 'Matrix']:
-        id_matrix = Matrix.identity(self.m)
+        id_matrix = Matrix(self.m, self.n)
         temp = Matrix.from_list(self.matrix)
-        for i in range(temp.m):      # Constructing identity matrix
+        for i in range(min(temp.m, temp.n)):      # Constructing identity matrix
             id_matrix.matrix[i][i] = 1
 
         big_matrix = Matrix(temp.m, 2 * temp.n, 0)
@@ -150,7 +150,7 @@ class Matrix:
                 big_matrix.matrix[i][j] = temp.matrix[i][j]
                 big_matrix.matrix[i][j + temp.n] = id_matrix.matrix[i][j]
 
-        for k in range(temp.m):    # Straight ahead (Lower left-hand corner jamming)
+        for k in range(min(temp.m, temp.n)):    # Straight ahead (Lower left-hand corner jamming)
             for i in range(2 * temp.n):
                 if temp.matrix[k][k] == 0:
                     continue
@@ -165,7 +165,7 @@ class Matrix:
                 for j in range(temp.n):
                     temp.matrix[i][j] = big_matrix.matrix[i][j]
 
-        for k in range(temp.m - 1, -1, -1):   # Reverse stroke (Top right-hand corner jamming)
+        for k in range(min(temp.m, temp.n) - 1, -1, -1):   # Reverse stroke (Top right-hand corner jamming)
             for i in range(2 * temp.n - 1, -1, -1):
                 if temp.matrix[k][k] == 0:
                     continue
@@ -180,7 +180,7 @@ class Matrix:
         return temp, big_matrix
 
     def inverse(self):
-        if self.det() == 0:
+        if not self.is_square or self.det() == 0:
             raise NonInvertibleMatrix("Matrix is not invertible")
         temp, big_matrix = self._gaussian_elimination()
         for i in range(self.m):
@@ -237,4 +237,4 @@ if __name__ == '__main__':
     matrix = [list(map(float, input().split())) for i in range(m)]
     A = Matrix(m, n)
     A.fill(matrix)
-    print(A.ref())
+    print(A.rref())

@@ -111,7 +111,7 @@ def ref_input(message):
 @log_function_call('ref')
 def calc_ref(message, action, matrix):
     result = matrix.ref()
-    answer = f'Матрица в ступенчатом виде:\n{str(result)}'
+    answer = f'Матрица в ступенчатом виде:\n<code>{str(result)}</code>'
     bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
     return answer
 
@@ -125,7 +125,7 @@ def rref_input(message):
 @log_function_call('rref')
 def calc_rref(message, action, matrix):
     result = matrix.rref()
-    answer = f'Матрица в приведённом ступенчатом виде:\n{str(result)}'
+    answer = f'Матрица в приведённом ступенчатом виде:\n<code>{str(result)}</code>'
     bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
     return answer
 
@@ -144,7 +144,7 @@ def calc_inv(message, action, matrix):
         bot.send_message(message.chat.id, 'Обратной матрицы не существует!', reply_markup=menu)
         return
     else:
-        answer = f'Обратная матрица:\n{str(result)}'
+        answer = f'Обратная матрица:\n<code>{str(result)}</code>'
         bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
         return answer
 
