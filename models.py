@@ -44,8 +44,20 @@ class User (Base):
     username = Column(String(32))
 
     @classmethod
-    def new(cls, user_id: int, last_name: str, first_name: str, username: str):
-        return cls(id=user_id, last_name=last_name, first_name=first_name, username=username)
+    def new(cls, user_id: int):
+        return cls(id=user_id)
+
+    @classmethod
+    def get_or_create(cls, db: Session, user_id: int, last_name: str, first_name: str, username: str):
+        user = db.query(cls).get(user_id)
+        if not user:
+            user = User.new(user_id)
+            db.add(user)
+        user.last_name = last_name
+        user.first_name = first_name
+        user.username = username
+        db.commit()
+        return user
 
 
 class LogRecord (Base):
@@ -92,13 +104,6 @@ def db_required(func):
         Session.remove()
         return res
     return wrapper
-
-
-def get_user(db, user_id):
-    user = db.query(User).get(user_id)
-    if not user:
-        return None
-    return user
 
 
 def create_all():
