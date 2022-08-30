@@ -19,7 +19,7 @@
 
 from functools import wraps
 
-from models import User, LogRecord, get_db, get_user, close_db
+from models import User, LogRecord, get_db, close_db
 from config import Config
 
 
@@ -43,16 +43,8 @@ def log_function_call(log_unit_name: str):
                 return result
             finally:
                 db = get_db()
-                user = get_user(db, message.from_user.id)
-                if not user:
-                    user = User.new(
-                        message.from_user.id,
-                        message.from_user.last_name,
-                        message.from_user.first_name,
-                        message.from_user.username
-                    )
-                    db.add(user)
-                    db.commit()
+                user = User.get_or_create(db, message.from_user.id, message.from_user.last_name,
+                                          message.from_user.first_name, message.from_user.username)
                 rec = LogRecord.new(user, log_unit_name, message.chat.id, info)
                 db.add(rec)
                 db.commit()

@@ -28,7 +28,7 @@ from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleM
 from rings import *
 from safe_eval import safe_eval, LimitError
 from statistics import log_function_call
-from models import User, get_db
+from models import User, get_db, close_db
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
@@ -60,6 +60,11 @@ def start_message(message):
                  f'Используй клавиатуру или команды для вызова нужной фишки\n'
                  f'/help - вызов помощи')
     bot.send_message(message.chat.id, send_mess, parse_mode='html', reply_markup=menu)
+    # User first-time creation
+    db = get_db()
+    User.get_or_create(db, message.from_user.id, message.from_user.last_name,
+                       message.from_user.first_name, message.from_user.username)
+    close_db()
 
 
 @bot.message_handler(commands=['help'])
@@ -363,6 +368,7 @@ def broadcast(message):
     db = get_db()
     for user in db.query(User).all():
         bot.send_message(user.id, message.text)
+    close_db()
 
 
 if __name__ == '__main__':
