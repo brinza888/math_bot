@@ -100,6 +100,28 @@ class Matrix:
         new.fill(new_matrix)
         return new
 
+    def __add__(self, other: "Matrix"):
+        if other.size != self.size:
+            raise SizesMatchError("Addition available for equal size matrices")
+        result = Matrix(self.m, self.n)
+        for i in range(self.m):
+            for j in range(self.n):
+                result[i, j] = self[i, j] + other[i, j]
+        return result
+
+    def __mul__(self, other: "Matrix"):
+        if self.n != other.m:
+            raise SizesMatchError("Multiplication available only for matrices with size MxN and NxL")
+        result = Matrix(self.m, other.n)
+        for i in range(result.m):
+            for j in range(result.n):
+                for k in range(self.n):
+                    result[i, j] += self[i, k] * other[k, j]
+        return result
+
+    def copy(self):
+        return Matrix.from_list(self.matrix)
+
     def fill(self, lst: List[List[Union[int, float]]]):
         rows = len(lst)
         if rows != self.m:
@@ -147,9 +169,17 @@ class Matrix:
             self.matrix[j][a], self.matrix[j][b] = self.matrix[j][b], self.matrix[j][a]
 
     def ref(self):
-        ref_matrix = Matrix.from_list(self.matrix)
-        straight_gaussian(ref_matrix)
-        return ref_matrix
+        ref = self.copy()
+        straight_gaussian(ref)
+        return ref
+
+    def inverse(self):
+        if not self.is_square:
+            raise SquareMatrixRequired("Inverse matrix exists only for square matrices")
+        tmp = self.copy()
+        inverse = straight_gaussian(tmp, Matrix.identity(self.n))
+        inverse = reverse_gaussian(tmp, inverse)
+        return inverse
 
     @classmethod
     def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
@@ -194,11 +224,9 @@ def straight_gaussian(matrix: Matrix, additional: Matrix = None):
             continue
         for i in range(k + 1, matrix.m):  # Subtract k row from all lower
             leading = matrix[i, k]
-            if leading == 0:
-                break
             for j in range(k, matrix.n):
                 matrix[i, j] -= matrix[k, j] * leading / matrix[k, k]
-            for j in range(k, additional.n):
+            for j in range(additional.n):
                 additional[i, j] -= additional[k, j] * leading / matrix[k, k]
     return additional
 
@@ -206,13 +234,20 @@ def straight_gaussian(matrix: Matrix, additional: Matrix = None):
 def reverse_gaussian(matrix: Matrix, additional: Matrix = None):
     if additional is None:
         additional = Matrix.zero(matrix.m, 1)
-    for k in range(matrix.n - 1, -1, -1):  # Backward (upper right-hand corner jamming)
+    for k in range(matrix.m - 1, -1, -1):  # Backward (upper right-hand corner jamming)
+        divider = matrix[k, k]
+        for j in range(matrix.n):  # leading coefficient = 1
+            matrix[k, j] = matrix[k, j] / divider
+        for j in range(additional.n):
+            additional[k, j] = additional[k, j] / divider
         for i in range(k - 1, -1, -1):
             leading = matrix[i, k]
-            for j in range(matrix.m - 1, k - 1, -1):
-                matrix[i, j] -= matrix[k, j] * leading / matrix[k, k]
-            for j in range(k, additional.n):
-                additional[i, j] -= additional[k, j] * leading / matrix[k, k]
+            if leading == 0:
+                continue
+            for j in range(matrix.n - 1, -1, -1):
+                matrix[i, j] -= matrix[k, j] * leading
+            for j in range(additional.n - 1, -1, -1):
+                additional[i, j] -= additional[k, j] * leading
     return additional
 
 
