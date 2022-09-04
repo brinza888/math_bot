@@ -267,10 +267,10 @@ def inverse_output(message, modulo):
         answer = (f'У {n} <b>нет</b> обратного в кольце Z/{modulo}\n'
                   f'Так как НОД({n}, {modulo}) > 1')
         bot.send_message(message.chat.id, answer, parse_mode='html')
+        return answer
     else:
         answer = str(result)
         bot.send_message(message.chat.id, answer)
-    finally:
         return answer
 
 
