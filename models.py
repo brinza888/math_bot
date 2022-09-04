@@ -36,7 +36,7 @@ Session = scoped_session(session_factory)
 
 
 class User (Base):
-    __tablename__ = 'user'
+    __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
     last_name = Column(String(64))
@@ -61,12 +61,12 @@ class User (Base):
 
 
 class LogRecord (Base):
-    __tablename__ = 'logs'
+    __tablename__ = "logs"
 
     id = Column(Integer, primary_key=True)
 
-    user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User, backref=backref('requests', lazy='dynamic'), uselist=False)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship(User, backref=backref("requests", lazy="dynamic"), uselist=False)
 
     in_chat_id = Column(Integer)
 
@@ -110,5 +110,5 @@ def create_all():
     Base.metadata.create_all(engine)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_all()

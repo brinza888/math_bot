@@ -76,7 +76,7 @@ def factorize_str(factorization) -> str:
     :param factorization:
     :return: string with product of primes' powers
     """
-    return ' * '.join([f'{k}^{v}' for k, v in factorization.items()])
+    return " * ".join([f"{k}^{v}" for k, v in factorization.items()])
 
 
 def find_inverse(a: int, n: int) -> int:
@@ -142,7 +142,7 @@ def find_idempotents(n: int) -> list:
     return result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     a, n = map(int, input("Элемент и модуль кольца: ").split())

@@ -61,7 +61,7 @@ class Matrix:
     def __setitem__(self, key: Tuple[int, int], value: Union[float, int]):
         self.matrix[key[0]][key[1]] = float(value)
 
-    def __eq__(self, other: 'Matrix'):
+    def __eq__(self, other: "Matrix"):
         if self.size != other.size:
             return False
         for i in range(self.m):
@@ -73,12 +73,12 @@ class Matrix:
     def __hash__(self):  # hashing for lru_cache decorator
         result = f"{self.m};{self.n};"
         for row in self.matrix:
-            result += ','.join([str(x) for x in row]) + ';'
+            result += ",".join([str(x) for x in row]) + ";"
         return int.from_bytes(hashlib.sha256(result.encode()).digest(), "little")
 
     def __repr__(self):
-        return '\n'.join([
-            '\t'.join([f'{x:6.3f}' for x in row])
+        return "\n".join([
+            "\t".join([f"{x:6.3f}" for x in row])
             for row in self.matrix
         ])
 
@@ -132,7 +132,7 @@ class Matrix:
             for j, element in enumerate(row):
                 self.matrix[i][j] = float(element)
 
-    def minor(self, el_i: int, el_j: int) -> 'Matrix':
+    def minor(self, el_i: int, el_j: int) -> "Matrix":
         minor = Matrix(self.m - 1, self.n - 1)
         mi, mj = 0, 0
         for i, row in enumerate(self.matrix):
@@ -182,29 +182,29 @@ class Matrix:
         return inverse
 
     @classmethod
-    def from_list(cls, lst: List[List[Union[int, float]]]) -> 'Matrix':
+    def from_list(cls, lst: List[List[Union[int, float]]]) -> "Matrix":
         matrix = Matrix(len(lst), len(lst[0]))
         matrix.fill(lst)
         return matrix
 
     @classmethod
-    def row(cls, lst: List[float]) -> 'Matrix':
+    def row(cls, lst: List[float]) -> "Matrix":
         matrix = Matrix(1, len(lst))
         matrix.fill([lst])
         return matrix
 
     @classmethod
-    def column(cls, lst: List[float]) -> 'Matrix':
+    def column(cls, lst: List[float]) -> "Matrix":
         matrix = Matrix(len(lst), 1)
         matrix.fill([[x] for x in lst])
         return matrix
 
     @classmethod
-    def zero(cls, m: int, n: int) -> 'Matrix':
+    def zero(cls, m: int, n: int) -> "Matrix":
         return Matrix(m, n)
 
     @classmethod
-    def identity(cls, n: int) -> 'Matrix':
+    def identity(cls, n: int) -> "Matrix":
         matrix = Matrix(n, n)
         for i in range(n):
             matrix.matrix[i][i] = 1
@@ -251,11 +251,11 @@ def reverse_gaussian(matrix: Matrix, additional: Matrix = None):
     return additional
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
-    m, n = map(int, input('Введите размер матрицы: ').split())
-    print('Введите матрицу: ')
+    m, n = map(int, input("Введите размер матрицы: ").split())
+    print("Введите матрицу: ")
     matrix = [list(map(float, input().split())) for i in range(m)]
     A = Matrix(m, n)
     A.fill(matrix)
