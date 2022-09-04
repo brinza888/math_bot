@@ -33,23 +33,23 @@ from models import User, get_db, close_db
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
 # generate supported logic operators description
-ops_description = '\n'.join([f'<b>{op}</b> {op_data[3]}' for op, op_data in OPS.items()])
+logic_ops_description = '\n'.join([f'{op} {op_data[3]}' for op, op_data in OPS.items()])
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton('/help'))
-menu.add(KeyboardButton('/calc'))
-menu.add(KeyboardButton('/factorize'))
-menu.add(KeyboardButton('/euclid'))
-menu.add(KeyboardButton('/logic'))
 
 menu.add(KeyboardButton('/det'))
 menu.add(KeyboardButton('/ref'))
-menu.add(KeyboardButton('/rref'))
-menu.add(KeyboardButton('/MInverse'))
+menu.add(KeyboardButton('/m_inverse'))
 
+menu.add(KeyboardButton('/factorize'))
+menu.add(KeyboardButton('/euclid'))
 menu.add(KeyboardButton('/idempotents'))
 menu.add(KeyboardButton('/nilpotents'))
 menu.add(KeyboardButton('/inverse'))
+menu.add(KeyboardButton('/logic'))
+
+menu.add(KeyboardButton('/calc'))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
@@ -70,19 +70,20 @@ def start_message(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.send_message(message.chat.id,
-                     ('/det для нахождения определителя матрицы (не более чем 8x8).\n'
-                      '/logic для построения таблицы истинности логического выражения.\n'
-                      '/idempotents для поиска идемпотентных элементов в Z/n.\n'
-                      '/nilpotents для поиска нильпотентных элементов в Z/n.\n'
-                      '/inverse для поиска обратного элемента в Z/n.\n'
-                      '/factorize для разложения натурального числа в простые.\n'
-                      '/euclid НОД двух чисел и решения Диофантового уравнения.\n'
-                      '/calc калькулятор выражений.\n'
-                      '/ref для поиска ступенчатого вида матрицы.\n'
-                      '/rref для поиска приведённого ступенчатого вида матрицы.\n'
-                      '/MInverse для поиска обратной матрицы.\n\n'
-                      '<u>Описание допустимых логических операторов в /logic</u>\n'
-                      f'{ops_description}'),
+                     ('<b>Работа с матрицами</b>\n'
+                      '/det - определитель матрицы.\n'
+                      '/ref - ступенчатый вид матрицы (верхне-треугольный).\n'
+                      '/m_inverse - обратная матрица.\n'
+                      '\n<b>Теория чисел и дискретная математика</b>\n'
+                      '/factorize - разложение натурального числа в простые.\n'
+                      '/euclid - НОД двух чисел и решение Диофантового уравнения.\n'
+                      '/idempotents - идемпотентные элементы в Z/n.\n'
+                      '/nilpotents - нильпотентные элементы в Z/n.\n'
+                      '/inverse - обратный элемент в Z/n.\n'
+                      '/logic - таблица истинности выражения.\n'
+                      '\n<b>Калькуляторы</b>\n'
+                      '/calc - калькулятор математических выражений.'
+                      ),
                      parse_mode='html')
 
 
@@ -94,9 +95,6 @@ def det(message):
 
 @log_function_call('det')
 def calc_det(message, action, matrix):
-    if matrix.n > Config.MAX_MATRIX:
-        bot.reply_to(message, 'Детерминант матрицы доступен для матриц размера не более чем 8x8!', reply_markup=menu)
-        return
     try:
         result = matrix.det()
     except SquareMatrixRequired:
@@ -121,27 +119,13 @@ def calc_ref(message, action, matrix):
     return answer
 
 
-@bot.message_handler(commands=['rref'])
-def rref_input(message):
-    m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
-    bot.register_next_step_handler(m, matrix_input, action='rref')
-
-
-@log_function_call('rref')
-def calc_rref(message, action, matrix):
-    result = matrix.rref()
-    answer = f'Матрица в приведённом ступенчатом виде:\n<code>{str(result)}</code>'
-    bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
-    return answer
-
-
-@bot.message_handler(commands=['MInverse'])
+@bot.message_handler(commands=['m_inverse'])
 def inv_input(message):
     m = bot.send_message(message.chat.id, 'Введите матрицу: (одним сообщением)', reply_markup=hide_menu)
-    bot.register_next_step_handler(m, matrix_input, action='MInverse')
+    bot.register_next_step_handler(m, matrix_input, action='m_inverse')
 
 
-@log_function_call('MInverse')
+@log_function_call('m_inverse')
 def calc_inv(message, action, matrix):
     try:
         result = matrix.inverse()
@@ -157,8 +141,7 @@ def calc_inv(message, action, matrix):
 action_mapper = {
     'det': calc_det,
     'ref': calc_ref,
-    'rref': calc_rref,
-    'MInverse': calc_inv
+    'm_inverse': calc_inv
 }
 
 
@@ -177,13 +160,20 @@ def matrix_input(message, action):
                      reply_markup=menu,
                      parse_mode='html')
     else:
-        next_handler = action_mapper[action]
-        next_handler(message, action=action, matrix=matrix)
+        if matrix.n > Config.MAX_MATRIX:
+            bot.reply_to(message, f'Ввод матрицы имеет ограничение в {Config.MAX_MATRIX}x{Config.MAX_MATRIX}!',
+                         reply_markup=menu)
+        else:
+            next_handler = action_mapper[action]
+            next_handler(message, action=action, matrix=matrix)
 
 
 @bot.message_handler(commands=['logic'])
 def logic_input(message):
-    m = bot.send_message(message.chat.id, 'Введите логическое выражение:', reply_markup=hide_menu)
+    m = bot.send_message(message.chat.id, f'<u>Допустимые операторы:</u>\n{logic_ops_description}\n\n'
+                                          'Введите логическое выражение:',
+                         reply_markup=hide_menu,
+                         parse_mode="html")
     bot.register_next_step_handler(m, logic_output)
 
 
@@ -335,7 +325,9 @@ def euclid_output(message):
 
 @bot.message_handler(commands=['calc'])
 def calc_input(message):
-    m = bot.send_message(message.chat.id, 'Введите выражение:')
+    m = bot.send_message(message.chat.id, 'Операция возведения в степень обозначается <b>**</b>\n\n'
+                                          'Введите выражение:',
+                         parse_mode="html")
     bot.register_next_step_handler(m, calc_output)
 
 

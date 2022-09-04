@@ -174,8 +174,8 @@ class Matrix:
         return ref
 
     def inverse(self):
-        if not self.is_square:
-            raise SquareMatrixRequired("Inverse matrix exists only for square matrices")
+        if not self.is_square or self.det() == 0:
+            raise NonInvertibleMatrix("Invertible matrix must be square with non-zero determinant")
         tmp = self.copy()
         inverse = straight_gaussian(tmp, Matrix.identity(self.n))
         inverse = reverse_gaussian(tmp, inverse)
