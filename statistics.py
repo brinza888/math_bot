@@ -28,18 +28,18 @@ def log_function_call(log_unit_name: str):
         @wraps(func)
         def wrapper(message, *args, **kwargs):
             info = {
-                'message': message.text,
-                'args': args,
-                'kwargs': kwargs,
+                "message": message.text,
+                "args": args,
+                "kwargs": kwargs,
             }
             try:
                 result = func(message, *args, **kwargs)
             except Exception as ex:
-                info['exception'] = str(ex)
+                info["exception"] = str(ex)
                 if Config.DEBUG:
                     raise ex
             else:
-                info['result'] = result
+                info["result"] = result
                 return result
             finally:
                 db = get_db()

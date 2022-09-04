@@ -73,7 +73,7 @@ operators = {
 def safe_eval(expr):
     if len(expr) >= LINE_LIMIT:
         raise ExpressionLimitError("Expression size limit exceeded")
-    return _eval(ast.parse(expr, mode='eval').body)
+    return _eval(ast.parse(expr, mode="eval").body)
 
 
 def _eval(node):
@@ -87,7 +87,7 @@ def _eval(node):
         raise TypeError(node)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     while True:
