@@ -23,9 +23,9 @@ from math import gcd
 from itertools import product
 
 
-def ext_gcd(a, b):
+def ext_gcd(a: int, b: int) -> Tuple[int, int, int]:
     """
-    Calculate GCD(a, b) and solve Diofant equation ax + by = 1
+    Calculate GCD(a, b) and solve Diofant equation ax + by = GCD(a, b)
     :param a: value for coefficient a
     :param b: value for coefficient b
     :return: tuple with GCD, x, y
@@ -70,7 +70,7 @@ def defactorize(factorization: Dict[int, int]) -> int:
     return n
 
 
-def factorize_str(factorization) -> str:
+def factorize_str(factorization: Dict[int, int]) -> str:
     """
     Make string representation for number in factorized form
     :param factorization:
