@@ -215,6 +215,8 @@ def straight_gaussian(matrix: Matrix, additional: Matrix = None):
     if additional is None:
         additional = Matrix.zero(matrix.m, 1)
     for k in range(matrix.n):  # Straight ahead (Lower left-hand corner jamming)
+        if k >= matrix.m:
+            break
         for i in range(k, matrix.m):
             for j in range(i, matrix.m):
                 if (matrix[i, k] == 0 or abs(matrix[i, k]) > abs(matrix[j, k])) and matrix[j, k] != 0:
