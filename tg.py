@@ -23,7 +23,6 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
 from git import Repo
-# import requests
 
 from config import *
 from logic import build_table, OPS
@@ -371,14 +370,16 @@ def broadcast(message):
 def send_about(message):
     repo = Repo('./')
     version = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
-    # response = requests.get(f"https://api.github.com/repos/{Config.BOT_OWNER}/{Config.BOT_REPO}/releases/latest")
-    # version = response.json()["name"] <- this is working variant with request lib
+    warning = ""
+    if not version:
+        version = repo.head.commit.hexsha
+        warning = " (<u>нестабильная</u>)"
     bot.send_message(message.chat.id,
-                    ("Authors: Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
-                    f"Current version: <b>{version}</b>\n"
-                    f"Link for github repository: {Config.BOT_LINK}\n"
-                    "<b>This bot is under GNU General Public License (Copyright (C) 2021-2022)</b>"),
-                    parse_mode="html")
+                     f"Версия{warning}: <b>{version}</b>\n\n"
+                     "Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
+                     f"GitHub: {Config.GITHUB_LINK}\n"
+                     "<b>Под лицензией GNU-GPL 2.0-or-latter</b>",
+                     parse_mode="html")
 
 
 if __name__ == '__main__':

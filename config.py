@@ -30,9 +30,6 @@ class Config:
     DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///bot.db")
     DEBUG = bool(int(os.getenv("DEBUG", 0)))
     BOT_TOKEN = os.getenv("BOT_TOKEN")
-    BOT_OWNER = os.getenv("BOT_OWNER")
-    BOT_REPO = os.getenv("BOT_REPO")
-    BOT_LINK = os.getenv("BOT_LINK")
     ADMINS = [int(x) for x in os.getenv("ADMINS", "").split()]
 
     # CALCULATION LIMITS
@@ -46,3 +43,6 @@ class Config:
     MAX_ELEMENTS = int(os.getenv("MAX_ELEMENTS", 101))
     # max number that can be factorized
     FACTORIZE_MAX = int(os.getenv("FACTORIZE_MAX", 10 ** 12))
+
+    # Project information
+    GITHUB_LINK = os.getenv("GITHUB_LINK", "https://github.com/BrinzaBezrukoff/math_bot")
