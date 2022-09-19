@@ -22,6 +22,9 @@ from io import StringIO
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
+from git import Repo
+# import requests
+
 from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
@@ -50,6 +53,7 @@ menu.add(KeyboardButton("/inverse"))
 menu.add(KeyboardButton("/logic"))
 
 menu.add(KeyboardButton("/calc"))
+menu.add(KeyboardButton("/about"))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
@@ -361,6 +365,20 @@ def broadcast(message):
     for user in db.query(User).all():
         bot.send_message(user.id, message.text)
     close_db()
+
+
+@bot.message_handler(commands=['about'])
+def send_about(message):
+    repo = Repo('./')
+    version = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
+    # response = requests.get(f"https://api.github.com/repos/{Config.BOT_OWNER}/{Config.BOT_REPO}/releases/latest")
+    # version = response.json()["name"] <- this is working variant with request lib
+    bot.send_message(message.chat.id,
+                    ("Authors: Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
+                    f"Current version: <b>{version}</b>\n"
+                    f"Link for github repository: {Config.BOT_LINK}\n"
+                    "<b>This bot is under GNU General Public License (Copyright (C) 2021-2022)</b>"),
+                    parse_mode="html")
 
 
 if __name__ == '__main__':

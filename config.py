@@ -30,6 +30,9 @@ class Config:
     DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///bot.db")
     DEBUG = bool(int(os.getenv("DEBUG", 0)))
     BOT_TOKEN = os.getenv("BOT_TOKEN")
+    BOT_OWNER = os.getenv("BOT_OWNER")
+    BOT_REPO = os.getenv("BOT_REPO")
+    BOT_LINK = os.getenv("BOT_LINK")
     ADMINS = [int(x) for x in os.getenv("ADMINS", "").split()]
 
     # CALCULATION LIMITS
