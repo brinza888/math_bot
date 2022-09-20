@@ -321,7 +321,7 @@ def euclid_output(message):
         return
     d, x, y = ext_gcd(a, b)
     answer = (f'НОД({a}, {b}) = {d}\n\n'
-              f'<u>Решение уравнения:</u>\n{a}*x + {b}*y <b>= {d}</b>\n'
+              f"<u>Решение уравнения:</u>\n{a}*x + {b if b >= 0 else f'({b})'}*y <b>= {d}</b>\n"
               f'x = {x}\ny = {y}\n\n'
               f'<u>Внимание</u>\n'
               f'<b>Обращайте внимание на вид уравнения!</b>\n'
