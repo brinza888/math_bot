@@ -2,3 +2,4 @@ requests
 PyTelegramBotAPI
 sqlalchemy
 python-dotenv
+gitPython
