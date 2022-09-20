@@ -23,6 +23,20 @@ from math import gcd
 from itertools import product
 
 
+def sgn(a: int):
+    """
+    Signum of number
+    :param a: number
+    :return: sign of passed number
+    """
+    if a < 0:
+        return -1
+    elif a > 0:
+        return 1
+    else:
+        return 0
+
+
 def ext_gcd(a: int, b: int) -> Tuple[int, int, int]:
     """
     Calculate GCD(a, b) and solve Diofant equation ax + by = GCD(a, b)
@@ -30,12 +44,14 @@ def ext_gcd(a: int, b: int) -> Tuple[int, int, int]:
     :param b: value for coefficient b
     :return: tuple with GCD, x, y
     """
+    _a, _b = sgn(a), sgn(b)
     if a == 0:
-        return b, 0, 1
+        return abs(b), 0, _b
+    a, b = abs(a), abs(b)
     d, x0, y0 = ext_gcd(b % a, a)
     x = y0 - (b // a) * x0
     y = x0
-    return d, x, y
+    return d, x * _a, y * _b
 
 
 @lru_cache
