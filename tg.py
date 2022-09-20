@@ -22,6 +22,8 @@ from io import StringIO
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 
+from git import Repo
+
 from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
@@ -50,6 +52,7 @@ menu.add(KeyboardButton("/inverse"))
 menu.add(KeyboardButton("/logic"))
 
 menu.add(KeyboardButton("/calc"))
+menu.add(KeyboardButton("/about"))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
@@ -58,7 +61,9 @@ hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close men
 def start_message(message):
     send_mess = (f"<b>Привет, {message.from_user.first_name} {message.from_user.last_name}!</b>\n"
                  f"Используй клавиатуру или команды для вызова нужной фишки\n"
-                 f"/help - вызов помощи")
+                 f"/help - вызов помощи\n"
+                 f"/about - информация о боте"
+                 )
     bot.send_message(message.chat.id, send_mess, parse_mode="html", reply_markup=menu)
     # User first-time creation
     db = get_db()
@@ -82,7 +87,8 @@ def send_help(message):
                       "/inverse - обратный элемент в Z/n.\n"
                       "/logic - таблица истинности выражения.\n"
                       "\n<b>Калькуляторы</b>\n"
-                      "/calc - калькулятор математических выражений."
+                      "/calc - калькулятор математических выражений.\n"
+                      "\n<b>Об этом боте</b> /about\n"
                       ),
                      parse_mode="html")
 
@@ -361,6 +367,22 @@ def broadcast(message):
     for user in db.query(User).all():
         bot.send_message(user.id, message.text)
     close_db()
+
+
+@bot.message_handler(commands=['about'])
+def send_about(message):
+    repo = Repo('./')
+    version = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
+    warning = ""
+    if not version:
+        version = repo.head.commit.hexsha
+        warning = " (<u>нестабильная</u>)"
+    bot.send_message(message.chat.id,
+                     f"Версия{warning}: <b>{version}</b>\n\n"
+                     "Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
+                     f"GitHub: {Config.GITHUB_LINK}\n"
+                     "<b>Под лицензией GNU-GPL 2.0-or-latter</b>",
+                     parse_mode="html")
 
 
 if __name__ == '__main__':

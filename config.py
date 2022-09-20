@@ -43,3 +43,6 @@ class Config:
     MAX_ELEMENTS = int(os.getenv("MAX_ELEMENTS", 101))
     # max number that can be factorized
     FACTORIZE_MAX = int(os.getenv("FACTORIZE_MAX", 10 ** 12))
+
+    # Project information
+    GITHUB_LINK = os.getenv("GITHUB_LINK", "https://github.com/BrinzaBezrukoff/math_bot")
