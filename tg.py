@@ -61,7 +61,9 @@ hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close men
 def start_message(message):
     send_mess = (f"<b>Привет, {message.from_user.first_name} {message.from_user.last_name}!</b>\n"
                  f"Используй клавиатуру или команды для вызова нужной фишки\n"
-                 f"/help - вызов помощи")
+                 f"/help - вызов помощи\n"
+                 f"/about - информация о боте"
+                 )
     bot.send_message(message.chat.id, send_mess, parse_mode="html", reply_markup=menu)
     # User first-time creation
     db = get_db()
