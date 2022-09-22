@@ -60,10 +60,11 @@ hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close men
 @bot.message_handler(commands=["start"])
 def start_message(message):
     send_mess = (
-        f'<b>Привет{ ", " + message.from_user.first_name if message.from_user.first_name is not None else ""}!</b>\n'
-        f'Используй клавиатуру или команды для вызова нужной фишки\n'
-        f'/help - вызов помощи\n'
-        f'/about - информация о боте'
+        f"<b>Привет{ ', ' + message.from_user.first_name if message.from_user.first_name is not None else ''}!</b>\n"
+        f"Используй клавиатуру или команды для вызова нужной фишки\n"
+        f"/help - вызов помощи\n"
+        f"/about - информация о боте\n"
+        f"Наш канал: {Config.CHANNEL_LINK}\n"
         )
     bot.send_message(message.chat.id, send_mess, parse_mode="html", reply_markup=menu)
     # User first-time creation
@@ -379,10 +380,11 @@ def send_about(message):
         version = repo.head.commit.hexsha
         warning = " (<u>нестабильная</u>)"
     bot.send_message(message.chat.id,
-                     f"Версия{warning}: <b>{version}</b>\n\n"
-                     "Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
+                     f"Версия{warning}: <b>{version}</b>\n"
+                     f"Наш канал: {Config.CHANNEL_LINK}\n"
+                     f"\nCopyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
                      f"GitHub: {Config.GITHUB_LINK}\n"
-                     "<b>Под лицензией GNU-GPL 2.0-or-latter</b>",
+                     f"<b>Под лицензией GNU-GPL 2.0-or-latter</b>",
                      parse_mode="html")
 
 

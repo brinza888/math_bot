@@ -46,3 +46,4 @@ class Config:
 
     # Project information
     GITHUB_LINK = os.getenv("GITHUB_LINK", "https://github.com/BrinzaBezrukoff/math_bot")
+    CHANNEL_LINK = os.getenv("CHANNEL_LINK", "https://t.me/math_bot_news")
