@@ -141,60 +141,60 @@ def calc_inv(message, action, matrix):
         bot.send_message(message.chat.id, "Обратной матрицы не существует!", reply_markup=menu)
         return
     else:
-        answer = f'Обратная матрица:\n<code>{str(result)}</code>'
-        bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+        answer = f"Обратная матрица:\n<code>{str(result)}</code>"
+        bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
         return answer
 
 
 action_mapper = {
-    'det': calc_det,
-    'ref': calc_ref,
-    'm_inverse': calc_inv
+    "det": calc_det,
+    "ref": calc_ref,
+    "m_inverse": calc_inv
 }
 
 
 def matrix_input(message, action):
     try:
-        lst = [[float(x) for x in row.split()] for row in message.text.split('\n')]
+        lst = [[float(x) for x in row.split()] for row in message.text.split("\n")]
         matrix = Matrix.from_list(lst)
     except SizesMatchError:
         bot.reply_to(message,
-                     'Несовпадение размеров строк или столбцов. Матрица должна быть <b>прямоугольной</b>.',
+                     "Несовпадение размеров строк или столбцов. Матрица должна быть <b>прямоугольной</b>.",
                      reply_markup=menu,
-                     parse_mode='html')
+                     parse_mode="html")
     except ValueError:
         bot.reply_to(message,
-                     'Необходимо вводить <b>числовую</b> квадратную матрицу',
+                     "Необходимо вводить <b>числовую</b> квадратную матрицу",
                      reply_markup=menu,
-                     parse_mode='html')
+                     parse_mode="html")
     else:
         if matrix.n > Config.MAX_MATRIX:
-            bot.reply_to(message, f'Ввод матрицы имеет ограничение в {Config.MAX_MATRIX}x{Config.MAX_MATRIX}!',
+            bot.reply_to(message, f"Ввод матрицы имеет ограничение в {Config.MAX_MATRIX}x{Config.MAX_MATRIX}!",
                          reply_markup=menu)
         else:
             next_handler = action_mapper[action]
             next_handler(message, action=action, matrix=matrix)
 
 
-@bot.message_handler(commands=['logic'])
+@bot.message_handler(commands=["logic"])
 def logic_input(message):
-    m = bot.send_message(message.chat.id, f'<u>Допустимые операторы:</u>\n{logic_ops_description}\n\n'
-                                          'Введите логическое выражение:',
+    m = bot.send_message(message.chat.id, f"<u>Допустимые операторы:</u>\n{logic_ops_description}\n\n"
+                                          "Введите логическое выражение:",
                          reply_markup=hide_menu,
                          parse_mode="html")
     bot.register_next_step_handler(m, logic_output)
 
 
-@log_function_call('logic')
+@log_function_call("logic")
 def logic_output(message):
     try:
         table, variables = build_table(message.text, Config.MAX_VARS)
         out = StringIO()  # abstract file (file-object)
-        print(*variables, 'F', file=out, sep=' ' * 2)
+        print(*variables, "F", file=out, sep=" " * 2)
         for row in table:
-            print(*row, file=out, sep=' ' * 2)
-        answer = f'<code>{out.getvalue()}</code>'
-        bot.send_message(message.chat.id, answer, parse_mode='html', reply_markup=menu)
+            print(*row, file=out, sep=" " * 2)
+        answer = f"<code>{out.getvalue()}</code>"
+        bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
         return answer
     except (AttributeError, SyntaxError):
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
@@ -202,49 +202,49 @@ def logic_output(message):
         bot.send_message(message.chat.id, f"Ограничение по кол-ву переменных: {Config.MAX_VARS}")
 
 
-@bot.message_handler(commands=['idempotents', 'nilpotents'])
+@bot.message_handler(commands=["idempotents", "nilpotents"])
 def ring_input(message):
-    m = bot.send_message(message.chat.id, 'Введите модуль кольца:')
+    m = bot.send_message(message.chat.id, "Введите модуль кольца:")
     bot.register_next_step_handler(m, ring_output, command=message.text[1:])
 
 
-@log_function_call('ring')
+@log_function_call("ring")
 def ring_output(message, command):
     try:
         n = int(message.text.strip())
     except ValueError:
-        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
         return
     if n >= Config.MAX_MODULO or n < 2:
-        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {Config.MAX_MODULO:E}', reply_markup=menu)
+        bot.send_message(message.chat.id, f"Ограничение: 2 <= n < {Config.MAX_MODULO:E}", reply_markup=menu)
         return
-    if command == 'idempotents':
-        result = [f'{row} -> {el}' for row, el in find_idempotents(n)]
-        title = 'Идемпотенты'
-    elif command == 'nilpotents':
+    if command == "idempotents":
+        result = [f"{row} -> {el}" for row, el in find_idempotents(n)]
+        title = "Идемпотенты"
+    elif command == "nilpotents":
         result = find_nilpotents(n)
-        title = 'Нильпотенты'
+        title = "Нильпотенты"
     else:
         return
     if len(result) > Config.MAX_ELEMENTS:
-        s = 'Элементов слишком много чтобы их вывести...'
+        s = "Элементов слишком много чтобы их вывести..."
     else:
-        s = '\n'.join([str(x) for x in result])
-    answer = (f'<b> {title} в Z/{n}</b>\n'
-              f'Количество: {len(result)}\n\n'
-              f'{s}\n')
+        s = "\n".join([str(x) for x in result])
+    answer = (f"<b> {title} в Z/{n}</b>\n"
+              f"Количество: {len(result)}\n\n"
+              f"{s}\n")
     bot.send_message(
         message.chat.id,
         answer,
         reply_markup=menu,
-        parse_mode='html'
+        parse_mode="html"
     )
     return answer
 
 
-@bot.message_handler(commands=['inverse'])
+@bot.message_handler(commands=["inverse"])
 def inverse_input_ring(message):
-    m = bot.send_message(message.chat.id, 'Введите модуль кольца:')
+    m = bot.send_message(message.chat.id, "Введите модуль кольца:")
     bot.register_next_step_handler(m, inverse_input_element)
 
 
@@ -252,29 +252,29 @@ def inverse_input_element(message):
     try:
         n = int(message.text.strip())
     except ValueError:
-        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
         return
     if n >= Config.MAX_MODULO or n < 2:
-        bot.send_message(message.chat.id, f'Ограничение: 2 <= n < {Config.MAX_MODULO:E}', reply_markup=menu)
+        bot.send_message(message.chat.id, f"Ограничение: 2 <= n < {Config.MAX_MODULO:E}", reply_markup=menu)
         return
-    m = bot.send_message(message.chat.id, 'Введите элемент, для которого требуется найти обратный:')
+    m = bot.send_message(message.chat.id, "Введите элемент, для которого требуется найти обратный:")
     bot.register_next_step_handler(m, inverse_output, modulo=n)
 
 
-@log_function_call('inverse')
+@log_function_call("inverse")
 def inverse_output(message, modulo):
     try:
         n = int(message.text.strip())
     except ValueError:
-        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
         return
     n = n % modulo
     try:
         result = find_inverse(n, modulo)
     except ArithmeticError:
-        answer = (f'У {n} <b>нет</b> обратного в кольце Z/{modulo}\n'
-                  f'Так как НОД({n}, {modulo}) > 1')
-        bot.send_message(message.chat.id, answer, parse_mode='html')
+        answer = (f"У {n} <b>нет</b> обратного в кольце Z/{modulo}\n"
+                  f"Так как НОД({n}, {modulo}) > 1")
+        bot.send_message(message.chat.id, answer, parse_mode="html")
         return answer
     else:
         answer = str(result)
@@ -282,77 +282,77 @@ def inverse_output(message, modulo):
         return answer
 
 
-@bot.message_handler(commands=['factorize'])
+@bot.message_handler(commands=["factorize"])
 def factorize_input(message):
-    m = bot.send_message(message.chat.id, 'Введите число:')
+    m = bot.send_message(message.chat.id, "Введите число:")
     bot.register_next_step_handler(m, factorize_output)
 
 
-@log_function_call('factorize')
+@log_function_call("factorize")
 def factorize_output(message):
     try:
         n = int(message.text.strip())
     except ValueError:
-        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
         return
     if n < 2 or n > Config.FACTORIZE_MAX:
         bot.send_message(
             message.chat.id,
-            f'Разложение доступно для положительных целых чисел n: 2 <= n <= {Config.FACTORIZE_MAX:E}'
+            f"Разложение доступно для положительных целых чисел n: 2 <= n <= {Config.FACTORIZE_MAX:E}"
         )
     else:
         fn = factorize(n)
-        answer = f'{n} = ' + factorize_str(fn)
+        answer = f"{n} = " + factorize_str(fn)
         bot.send_message(message.chat.id, answer)
         return answer
 
 
-@bot.message_handler(commands=['euclid'])
+@bot.message_handler(commands=["euclid"])
 def euclid_input(message):
-    m = bot.send_message(message.chat.id, 'Введите два числа через пробел:')
+    m = bot.send_message(message.chat.id, "Введите два числа через пробел:")
     bot.register_next_step_handler(m, euclid_output)
 
 
-@log_function_call('euclid')
+@log_function_call("euclid")
 def euclid_output(message):
     try:
         a, b = map(int, message.text.strip().split(" "))
     except ValueError:
-        bot.send_message(message.chat.id, 'Ошибка ввода данных', reply_markup=menu)
+        bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
         return
     d, x, y = ext_gcd(a, b)
-    answer = (f'НОД({a}, {b}) = {d}\n\n'
+    answer = (f"НОД({a}, {b}) = {d}\n\n"
               f"<u>Решение уравнения:</u>\n{a}*x + {b if b >= 0 else f'({b})'}*y <b>= {d}</b>\n"
-              f'x = {x}\ny = {y}\n\n'
-              f'<u>Внимание</u>\n'
-              f'<b>Обращайте внимание на вид уравнения!</b>\n'
-              f'Решается уравнение вида ax + by = НОД(a, b)!')
-    bot.send_message(message.chat.id, answer, parse_mode='html')
+              f"x = {x}\ny = {y}\n\n"
+              f"<u>Внимание</u>\n"
+              f"<b>Обращайте внимание на вид уравнения!</b>\n"
+              f"Решается уравнение вида ax + by = НОД(a, b)!")
+    bot.send_message(message.chat.id, answer, parse_mode="html")
     return answer
 
 
-@bot.message_handler(commands=['calc'])
+@bot.message_handler(commands=["calc"])
 def calc_input(message):
-    m = bot.send_message(message.chat.id, 'Операция возведения в степень обозначается <b>^</b>\n\n'
-                                          'Введите выражение:',
+    m = bot.send_message(message.chat.id, "Операция возведения в степень обозначается <b>^</b>\n\n"
+                                          "Введите выражение:",
                          parse_mode="html")
     bot.register_next_step_handler(m, calc_output)
 
 
-@log_function_call('calc')
+@log_function_call("calc")
 def calc_output(message):
     try:
         answer = str(safe_eval(message.text))
     except (SyntaxError, TypeError):
-        bot.send_message(message.chat.id, 'Синтаксическая ошибка в выражении', reply_markup=menu)
+        bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
     except LimitError:
-        bot.send_message(message.chat.id, 'Достигнут лимит возможной сложности вычислений', reply_markup=menu)
+        bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
     except ZeroDivisionError:
-        bot.send_message(message.chat.id, 'Деление на 0 не определено')
+        bot.send_message(message.chat.id, "Деление на 0 не определено")
     except ArithmeticError:
-        bot.send_message(message.chat.id, 'Арифметическая ошибка')
+        bot.send_message(message.chat.id, "Арифметическая ошибка")
     else:
-        bot.send_message(message.chat.id, answer, parse_mode='html')
+        bot.send_message(message.chat.id, answer, parse_mode="html")
         return answer
 
 
@@ -371,9 +371,9 @@ def broadcast(message):
     close_db()
 
 
-@bot.message_handler(commands=['about'])
+@bot.message_handler(commands=["about"])
 def send_about(message):
-    repo = Repo('./')
+    repo = Repo("./")
     version = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
     warning = ""
     if not version:
@@ -388,7 +388,7 @@ def send_about(message):
                      parse_mode="html")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     bot.polling(none_stop=True)

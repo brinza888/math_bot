@@ -90,17 +90,17 @@ def build_table(s, var_limit=8):
         raise ValueError("Variables limit reached")
     table = []
     for i in range(2 ** n):
-        values = [int(x) for x in bin(i)[2:].rjust(n, '0')]
+        values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
         d = {variables[k]: values[k] for k in range(n)}
         table.append(values + [int(calculate(tokens, d))])
     return table, variables
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
-    s = input('Expression: ')
+    s = input("Expression: ")
     table, variables = build_table(s)
-    print(*variables, 'F')
+    print(*variables, "F")
     for row in table:
         print(*row)
