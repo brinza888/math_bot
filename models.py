@@ -87,6 +87,14 @@ class LogRecord (Base):
         )
 
 
+# class ReportRecord (Base):
+    # __tablename__ = "reports"
+
+    # id = Column(Integer, primary_key=True)
+
+    # user_id = Column(Integer, ForeignKey("user.id"))
+
+
 def get_db():
     session = Session()
     return session
