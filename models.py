@@ -87,12 +87,35 @@ class LogRecord (Base):
         )
 
 
-# class ReportRecord (Base):
-    # __tablename__ = "reports"
+class ReportRecord (Base):
+    __tablename__ = "reports"
 
-    # id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    text = Column(Text, default="{}")
+    timestamp = Column(DateTime, default=datetime.now)
+    status = Column(String(32))
 
-    # user_id = Column(Integer, ForeignKey("user.id"))
+    @classmethod
+    def new(cls, user_id: int, text: str, status: str):
+        return cls(
+            user_id=user_id,
+            text=text,
+            status=status,
+        )
+
+    @classmethod
+    def create_report(cls, db: Session, user_id: int, text: str, status="unchecked"):
+        report = ReportRecord.new(user_id, text, status)
+        db.add(report)
+        report.text = text
+        report.status = status
+        db.commit()
+        return report
+
+    @classmethod
+    def get_reports(cls, db: Session):
+        pass
 
 
 def get_db():

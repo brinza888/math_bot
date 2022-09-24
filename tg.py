@@ -30,7 +30,7 @@ from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleM
 from rings import *
 from safe_eval import safe_eval, LimitError
 from statistics import log_function_call
-from models import User, get_db, close_db
+from models import User, get_db, close_db, ReportRecord
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
 
@@ -400,6 +400,9 @@ def callback_inline(call):
 
 
 def report_handling(message):
+    db = get_db()
+    ReportRecord.create_report(db, message.from_user.id, message.text)
+    close_db()
     bot.send_message(message.chat.id, "Спасибо, что сообщаете нам о проблемах!")
 
 
