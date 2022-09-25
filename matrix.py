@@ -19,6 +19,7 @@
 
 from typing import Tuple, List, Union
 from functools import lru_cache
+from fractions import Fraction
 import hashlib
 
 
@@ -34,8 +35,11 @@ class SquareMatrixRequired (ValueError):
     pass
 
 
+MatrixNumber = Union[float, int, Fraction]
+
+
 class Matrix:
-    def __init__(self, m: int, n: int, initial: Union[float, int] = 0):
+    def __init__(self, m: int, n: int, initial: MatrixNumber = 0):
         self.__size: Tuple[int, int] = (m, n)
         self.matrix = [[initial] * n for _ in range(m)]
 
@@ -55,13 +59,13 @@ class Matrix:
     def size(self) -> Tuple[int, int]:
         return self.__size
 
-    def __getitem__(self, item: Tuple[int, int]) -> float:
+    def __getitem__(self, item: Tuple[int, int]) -> MatrixNumber:
         return self.matrix[item[0]][item[1]]
 
-    def __setitem__(self, key: Tuple[int, int], value: Union[float, int]):
+    def __setitem__(self, key: Tuple[int, int], value: MatrixNumber):
         self.matrix[key[0]][key[1]] = float(value)
 
-    def __eq__(self, other: "Matrix"):
+    def __eq__(self, other: "Matrix") -> bool:
         if self.size != other.size:
             return False
         for i in range(self.m):
@@ -70,19 +74,19 @@ class Matrix:
                     return False
         return True
 
-    def __hash__(self):  # hashing for lru_cache decorator
+    def __hash__(self) -> int:  # hashing for lru_cache decorator
         result = f"{self.m};{self.n};"
         for row in self.matrix:
             result += ",".join([str(x) for x in row]) + ";"
         return int.from_bytes(hashlib.sha256(result.encode()).digest(), "little")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "\n".join([
             "\t".join([f"{x:6.3f}" for x in row])
             for row in self.matrix
         ])
 
-    def __or__(self, other):  # vertical concatenation
+    def __or__(self, other) -> "Matrix":  # vertical concatenation
         if other.m != self.m:
             raise SizesMatchError("Vertical concatenation works with same rows count")
         new_matrix = [[] for _ in range(self.m)]
@@ -92,7 +96,7 @@ class Matrix:
         new.fill(new_matrix)
         return new
 
-    def __xor__(self, other):  # horizontal concatenation
+    def __xor__(self, other) -> "Matrix":  # horizontal concatenation
         if other.n != self.n:
             raise SizesMatchError("Horizontal concatenation works with same columns count")
         new_matrix = self.matrix + other.matrix
@@ -100,7 +104,7 @@ class Matrix:
         new.fill(new_matrix)
         return new
 
-    def __add__(self, other: "Matrix"):
+    def __add__(self, other: "Matrix") -> "Matrix":
         if other.size != self.size:
             raise SizesMatchError("Addition available for equal size matrices")
         result = Matrix(self.m, self.n)
@@ -109,7 +113,7 @@ class Matrix:
                 result[i, j] = self[i, j] + other[i, j]
         return result
 
-    def __mul__(self, other: "Matrix"):
+    def __mul__(self, other: "Matrix") -> "Matrix":
         if self.n != other.m:
             raise SizesMatchError("Multiplication available only for matrices with size MxN and NxL")
         result = Matrix(self.m, other.n)
@@ -119,10 +123,10 @@ class Matrix:
                     result[i, j] += self[i, k] * other[k, j]
         return result
 
-    def copy(self):
+    def copy(self) -> "Matrix":
         return Matrix.from_list(self.matrix)
 
-    def fill(self, lst: List[List[Union[int, float]]]):
+    def fill(self, lst: List[List[MatrixNumber]]):
         rows = len(lst)
         if rows != self.m:
             raise SizesMatchError("Count of rows in list must be same with count of rows in Matrix")
@@ -148,7 +152,7 @@ class Matrix:
         return minor
 
     @lru_cache
-    def det(self) -> float:
+    def det(self) -> MatrixNumber:
         if len(self.matrix) == 1 and len(self.matrix[0]) == 1:
             return self.matrix[0][0]
         if not self.is_square:
@@ -168,12 +172,12 @@ class Matrix:
         for j in range(self.m):
             self.matrix[j][a], self.matrix[j][b] = self.matrix[j][b], self.matrix[j][a]
 
-    def ref(self):
+    def ref(self) -> "Matrix":
         ref = self.copy()
         straight_gaussian(ref)
         return ref
 
-    def inverse(self):
+    def inverse(self) -> "Matrix":
         if not self.is_square or self.det() == 0:
             raise NonInvertibleMatrix("Invertible matrix must be square with non-zero determinant")
         tmp = self.copy()
@@ -182,19 +186,19 @@ class Matrix:
         return inverse
 
     @classmethod
-    def from_list(cls, lst: List[List[Union[int, float]]]) -> "Matrix":
+    def from_list(cls, lst: List[List[MatrixNumber]]) -> "Matrix":
         matrix = Matrix(len(lst), len(lst[0]))
         matrix.fill(lst)
         return matrix
 
     @classmethod
-    def row(cls, lst: List[float]) -> "Matrix":
+    def row(cls, lst: List[MatrixNumber]) -> "Matrix":
         matrix = Matrix(1, len(lst))
         matrix.fill([lst])
         return matrix
 
     @classmethod
-    def column(cls, lst: List[float]) -> "Matrix":
+    def column(cls, lst: List[MatrixNumber]) -> "Matrix":
         matrix = Matrix(len(lst), 1)
         matrix.fill([[x] for x in lst])
         return matrix
@@ -211,7 +215,7 @@ class Matrix:
         return matrix
 
 
-def straight_gaussian(matrix: Matrix, additional: Matrix = None):
+def straight_gaussian(matrix: Matrix, additional: Matrix = None) -> "Matrix":
     if additional is None:
         additional = Matrix.zero(matrix.m, 1)
     for k in range(matrix.n):  # Straight ahead (Lower left-hand corner jamming)
@@ -233,7 +237,7 @@ def straight_gaussian(matrix: Matrix, additional: Matrix = None):
     return additional
 
 
-def reverse_gaussian(matrix: Matrix, additional: Matrix = None):
+def reverse_gaussian(matrix: Matrix, additional: Matrix = None) -> "Matrix":
     if additional is None:
         additional = Matrix.zero(matrix.m, 1)
     for k in range(matrix.m - 1, -1, -1):  # Backward (upper right-hand corner jamming)
