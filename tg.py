@@ -21,6 +21,7 @@ from io import StringIO
 
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from telebot.apihelper import ApiTelegramException
 
 from git import Repo
 
@@ -366,8 +367,14 @@ def broadcast_input(message):
 
 def broadcast(message):
     db = get_db()
+    blocked_count = 0
     for user in db.query(User).all():
-        bot.send_message(user.id, message.text)
+        try:
+            bot.send_message(user.id, message.text)
+        except ApiTelegramException:
+            blocked_count += 1
+    bot.send_message(message.chat.id, "Рассылка успешно завершена!\n"
+                                      f"Не получили рассылку: {blocked_count}")
     close_db()
 
 
