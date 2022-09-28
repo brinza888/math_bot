@@ -56,10 +56,25 @@ menu.add(KeyboardButton("/about"))
 
 hide_menu = ReplyKeyboardRemove()  # sending this as reply_markup will close menu
 
-report_button = InlineKeyboardButton(text="Сообщить о проблеме!", callback_data="report")
-see_reports_button = InlineKeyboardButton(text="View reports", callback_data="view_reports")
-inline_menu = InlineKeyboardMarkup(row_width=1)
-inline_menu.add(report_button)
+all_reports_button = InlineKeyboardButton(text="Все ошибки", callback_data="all_reports")
+checked_reports_button = InlineKeyboardButton(text="Просмотренные ошибки", callback_data="checked_reports")
+unchecked_reports_button = InlineKeyboardButton(text="Непросмотренные ошибки", callback_data="unchecked_reports")
+back_button = InlineKeyboardButton(text="Назад", callback_data="back_button")
+reports_menu = InlineKeyboardMarkup(row_width=1)
+reports_menu.add(all_reports_button, checked_reports_button, unchecked_reports_button, back_button)
+
+check_report_button = InlineKeyboardButton(text="Отметить просмотренным", callback_data="change_status_to_checked")
+solved_report_button = InlineKeyboardButton(text="Проблема решена", callback_data="change_status_to_solved")
+admin_menu = InlineKeyboardMarkup(row_width=1)
+admin_menu.add(check_report_button, solved_report_button)
+
+
+def get_inline_menu(user_id):
+    mk = InlineKeyboardMarkup(row_width=1)
+    mk.add(InlineKeyboardButton(text="Сообщить о проблеме!", callback_data="report"))
+    if user_id in Config.ADMINS:
+        mk.add(InlineKeyboardButton(text="Посмотреть ошибки", callback_data="view_reports"))
+    return mk
 
 
 @bot.message_handler(commands=["start"])
@@ -80,8 +95,7 @@ def start_message(message):
 
 @bot.message_handler(commands=["help"])
 def send_help(message):
-    if message.from_user.id in Config.ADMINS:
-        inline_menu.add(see_reports_button)
+    inline_menu = get_inline_menu(message.from_user.id)
     bot.send_message(message.chat.id,
                      ("<b>Работа с матрицами</b>\n"
                       "/det - определитель матрицы.\n"
@@ -401,9 +415,46 @@ def callback_inline(call):
 
 def report_handling(message):
     db = get_db()
-    ReportRecord.create_report(db, message.from_user.id, message.text)
+    user = User.get_or_create(db, message.from_user.id, message.from_user.last_name,
+                                          message.from_user.first_name, message.from_user.username)
+    rec = ReportRecord.new(user, message.text)
+    db.add(rec)
+    db.commit()
     close_db()
     bot.send_message(message.chat.id, "Спасибо, что сообщаете нам о проблемах!")
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "view_reports")
+def choose_report_types(call):
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                  reply_markup=reports_menu)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "all_reports" or call.data == "checked_reports" or
+                                              call.data == "unchecked_reports")
+def list_reports(call):
+    db = get_db()
+    reports = ReportRecord.get_all_reports(db, call.data)
+    close_db()
+    for report in reports:
+        bot.send_message(chat_id=call.message.chat.id, text=f'Report id: {report.id}\nUser id: {report.user_id}\n'
+                                                            f'Timestamp: {report.timestamp}\n\nProblem statement:\n{report.text}\n\n'
+                                                            f'Status: <b>{report.status}</b>', parse_mode="html",
+                         reply_markup=admin_menu)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "change_status_to_checked" or
+                                              call.data == "change_status_to_solved")
+def change_report_status(call):
+    db = get_db()
+    ReportRecord.change_status(db, call.message.text.split()[2], call.data)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "back_button")
+def back_func(call):
+    inline_menu = get_inline_menu(call.from_user.id)
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                  reply_markup=inline_menu)
 
 
 if __name__ == "__main__":

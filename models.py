@@ -91,31 +91,44 @@ class ReportRecord (Base):
     __tablename__ = "reports"
 
     id = Column(Integer, primary_key=True)
+
     user_id = Column(Integer, ForeignKey("user.id"))
+
     text = Column(Text, default="{}")
     timestamp = Column(DateTime, default=datetime.now)
     status = Column(String(32))
 
+    def __init__(self, *args, **kwargs):
+        super(ReportRecord, self).__init__(*args, **kwargs)
+
     @classmethod
-    def new(cls, user_id: int, text: str, status: str):
+    def new(cls, user: "User", text: str):
         return cls(
-            user_id=user_id,
+            user_id=user.id,
             text=text,
-            status=status,
+            status="unchecked",
         )
 
     @classmethod
-    def create_report(cls, db: Session, user_id: int, text: str, status="unchecked"):
-        report = ReportRecord.new(user_id, text, status)
-        db.add(report)
-        report.text = text
-        report.status = status
-        db.commit()
-        return report
+    def get_all_reports(cls, db: Session, stat: str) -> list:
+        if stat == "all_reports":
+            reports = db.query(cls).all()
+        elif stat == "checked_reports":
+            reports = db.query(cls).filter(ReportRecord.status.like("checked")).all()
+        else:
+            reports = db.query(cls).filter(ReportRecord.status.like("unchecked")).all()
+        return reports
 
     @classmethod
-    def get_reports(cls, db: Session):
-        pass
+    def change_status(cls, db: Session, id: int, new_status: str) -> None:
+        report = db.query(cls).get(id)
+        if new_status == "change_status_to_solved":
+            report.status = "solved"
+
+        elif new_status == "change_status_to_checked":
+            report.status = "checked"
+
+        db.commit()
 
 
 def get_db():
