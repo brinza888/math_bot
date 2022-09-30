@@ -1,6 +1,7 @@
-from typing import Callable, TypeVar, Generic, Union, Dict, Optional, Deque
+from typing import Callable, TypeVar, Generic, List, Dict, FrozenSet, Deque, Tuple
 from collections import deque
-from abc import ABCMeta, abstractmethod
+from string import digits
+from abc import ABCMeta
 from enum import Enum
 
 
@@ -12,97 +13,181 @@ class InvalidSyntax (ValueError):
     pass
 
 
-class InvalidCalculatorParameter (ValueError):
+class InvalidName (ValueError):
     pass
-
-
-class Associativity (Enum):
-    LEFT = 0
-    RIGHT = 1
 
 
 T = TypeVar("T")
 
 
-class ExprElement (Generic[T], metaclass=ABCMeta):
-    sequence: str
-
-    def __init__(self, sequence: str):
-        self.sequence = sequence
+class Token (metaclass=ABCMeta):
+    def __repr__(self):
+        return f"<{self.__class__.__name__}>"
 
 
-class OpenBrace (ExprElement):
+class OpenBrace (Token):
     pass
 
 
-class CloseBrace (ExprElement):
+class CloseBrace (Token):
     pass
 
 
-class Number (ExprElement):
-    value: Union[T, Variable]
+class ArgsSeparator (Token):
+    pass
 
 
-class Calculator (ExprElement, metaclass=ABCMeta):
-    BackendFunction = Callable[..., T]
+class Number (Generic[T], Token):
+    value: T
 
-    func: BackendFunction
-    argc: int = 1
+    def __init__(self, value: T):
+        self.value = value
 
-    def __init__(self, sequence: str, func: BackendFunction, argc: int = 1):
-        super(Calculator, self).__init__(sequence)
+
+class Evaluator (Generic[T], Token):
+    func: Callable[..., T]
+
+    def __init__(self, func: Callable[..., T]):
+        super().__init__()
         self.func = func
-        self.argc = argc
 
-    def __call__(self, *args):
+    def __call__(self, *args: T) -> T:
         return self.func(*args)
 
 
-class Operator (Calculator):
-    priority: int
-    associativity: Associativity
+class Operator (Evaluator):
+    class Ary (Enum):
+        UNARY = 0
+        BINARY = 1
 
-    def __init__(self, symbol: str, func: Calculator.BackendFunction, argc: int = 2,
-                 priority: int = 1, assoc: Associativity = Associativity.LEFT):
-        super(Operator, self).__init__(sequence=symbol, func=func, argc=argc)
-        if self.argc > 2:
-            raise InvalidCalculatorParameter("Operator argc must be 1 or 2 (unary or binary)")
+    class Associativity(Enum):
+        LEFT = 0
+        RIGHT = 1
+
+    char: str
+    priority: int
+    assoc: Associativity = Associativity.LEFT
+
+    def __init__(self, char: str, func: Callable[..., T], priority: int = 1,
+                 assoc: Associativity = Associativity.LEFT,
+                 ary: Ary = Ary.BINARY):
+        super(Operator, self).__init__(func)
+        self.char = char
         self.priority = priority
-        self.associativity = assoc
+        self.assoc = assoc
+        self.ary = ary
+
+
+class Function (Evaluator):
+    name: str
+    argc: int
+
+    def __init__(self, name: str, func: Callable[..., T], argc: int = 1):
+        super(Function, self).__init__(func)
+        self.name = name
         self.argc = argc
 
 
-class Function (Calculator):
-    def __init_(self, name: str, func: Calculator.BackendFunction, argc: int = 1):
-        super(Function, self).__init__(sequence=name, func=func, argc=argc)
-
-
-class Token:
-    expr_element: ExprElement
-
-    def __init__(self, expr_element: ExprElement):
-        self.expr_element = expr_element
-
-
-class Grammar:
+class ParsedExpression (Generic[T]):
     def __init__(self):
-        self.operators: Dict[str, Operator] = {}
-        self.functions: Dict[str, Function] = {}
-        self.open_brace: OpenBrace = OpenBrace("(")
-        self.close_brace: CloseBrace = CloseBrace(")")
-        self.variables: Dict[str, Variable] = {}
+        self.tokens: Deque[Token] = deque()
+        self.variables: List[str] = []
 
-    def add(self, el: ExprElement):
-        if isinstance(el, Operator):
-            self.operators[el.sequence] = el
-        elif isinstance(el, Function):
-            self.functions[el.sequence] = el
-        elif isinstance(el, OpenBrace):
-            self.open_brace = el
-        elif isinstance(el, CloseBrace):
-            self.close_brace = el
-        elif isinstance(el, Variable):
+    def push(self, token: Token):
+        self.tokens.append(token)
+
+    def add_variable(self, name: str):
+        self.variables.append(name)
+
+    def __repr__(self):
+        return repr(self.tokens)
 
 
-    def parse(self) -> Deque[Token]:
-        pass
+class ShuntingYard (Generic[T]):
+    def __init__(self, operators: List[Operator], functions: List[Function],
+                 digits_: FrozenSet[str] = frozenset(digits),
+                 whitespaces: FrozenSet[str] = frozenset((" ", "\t", "\n")),
+                 variables: bool = False,
+                 converter: Callable[[str], T] = T,
+                 args_separator: str = ",",
+                 braces: Tuple[str, str] = ("(", ")")):
+        self.unary_operators = {op.char: op for op in operators if op.ary == Operator.Ary.UNARY}
+        self.binary_operators = {op.char: op for op in operators if op.ary == Operator.Ary.BINARY}
+        self.functions = {f.name: f for f in functions}
+
+        self.digits = digits_
+        self.whitespaces = whitespaces
+        self.variables = variables
+        self.converter = converter
+        self.args_separator = args_separator
+        self.open_brace, self.close_brace = braces
+
+        self.functions_first = frozenset((key[0] for key in self.functions))
+
+    def parse(self, string: str) -> ParsedExpression:
+        if not string:
+            raise InvalidInput("String is empty, nothing to parse")
+        input = deque(string)
+        ary_state = Operator.Ary.UNARY
+        pexpr = ParsedExpression()
+        position = 0
+        char = input.popleft()
+        while input:
+            print(pexpr)
+            if char in self.whitespaces:
+                continue
+            elif char in self.unary_operators and ary_state == Operator.Ary.UNARY:
+                pexpr.push(self.unary_operators[char])
+            elif char in self.binary_operators and ary_state == Operator.Ary.BINARY:
+                pexpr.push(self.binary_operators[char])
+            elif char in self.functions_first:
+                func_name = char
+                while input:
+                    char = input.popleft()
+                    position += 1
+                    if char in self.whitespaces: break
+                    func_name += char
+                if func_name in self.functions:
+                    pexpr.push(self.functions[func_name])
+                else:
+                    pass  # do smth
+            elif char in self.digits:
+                number = char
+                while input:
+                    char = input.popleft()
+                    position += 1
+                    if char in self.whitespaces: break
+                    if char not in self.digits:
+                        raise InvalidInput(f"Invalid character inside number '{char}' at pos {position}")
+                    number += char
+                pexpr.push(Number(number))
+            elif char == self.args_separator:
+                pexpr.push(ArgsSeparator())
+            elif char == self.open_brace:
+                pexpr.push(OpenBrace())
+            elif char == self.close_brace:
+                pexpr.push(CloseBrace())
+            else:
+                raise InvalidInput(f"Invalid character '{char}' at pos {position}")
+            char = input.popleft()
+            position += 1
+
+        return pexpr
+
+    def shunt(self, pexpr: ParsedExpression) -> None:
+        # self
+        return None
+
+
+if __name__ == "__main__":
+    sy = ShuntingYard(
+        [
+            Operator("+", lambda a, b: a + b, 1),
+            Operator("*", lambda a, b: a * b, 2),
+        ],
+        [
+            Function("abs", lambda x: abs(x))
+        ]
+    )
+    pexpr = sy.parse("5 + 8 * 3")
+    print(pexpr)
