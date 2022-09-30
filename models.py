@@ -97,6 +97,7 @@ class ReportRecord (Base):
     text = Column(Text, default="{}")
     timestamp = Column(DateTime, default=datetime.now)
     status = Column(String(32))
+    link = Column(String(64))
 
     def __init__(self, *args, **kwargs):
         super(ReportRecord, self).__init__(*args, **kwargs)
@@ -106,28 +107,38 @@ class ReportRecord (Base):
         return cls(
             user_id=user.id,
             text=text,
-            status="unchecked",
+            status="NEW",
+            link=None,
         )
 
     @classmethod
-    def get_all_reports(cls, db: Session, stat: str) -> list:
-        if stat == "all_reports":
-            reports = db.query(cls).all()
-        elif stat == "checked_reports":
-            reports = db.query(cls).filter(ReportRecord.status.like("checked")).all()
+    def get_reports(cls, db: Session, status: str) -> list:
+        if status == "new_reports":
+            reports = db.query(cls).filter(ReportRecord.status.like("NEW")).all()
+        elif status == "accepted_reports":
+            reports = db.query(cls).filter(ReportRecord.status.like("ACCEPTED")).all()
+        elif status == "rejected_reports":
+            reports = db.query(cls).filter(ReportRecord.status.like("REJECTED")).all()
+        elif status == "closed_reports":
+            reports = db.query(cls).filter(ReportRecord.status.like("CLOSED")).all()
         else:
-            reports = db.query(cls).filter(ReportRecord.status.like("unchecked")).all()
+            reports = db.query(cls).all()
         return reports
 
     @classmethod
-    def change_status(cls, db: Session, id: int, new_status: str) -> None:
+    def get_report_by_id(cls, db: Session, id: int):
+        return db.query(cls).get(id)
+
+    @classmethod
+    def change_status(cls, db: Session, id: int, new_status: str, link=""):
         report = db.query(cls).get(id)
-        if new_status == "change_status_to_solved":
-            report.status = "solved"
-
-        elif new_status == "change_status_to_checked":
-            report.status = "checked"
-
+        if new_status == "accept_report":
+            report.status = "ACCEPTED"
+            report.link = link
+        if new_status == "reject_report":
+            report.status = "REJECTED"
+        if new_status == "close_report":
+            report.status = "CLOSED"
         db.commit()
 
 
