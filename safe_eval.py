@@ -78,15 +78,15 @@ def _eval(node):
     if isinstance(node, ast.Num):  # <number>
         return node.n
     else:
+        if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
+            raise TypeError(node)
         func = operators.get(type(node.op))
         if not func:
             raise SyntaxError(node.op)
-        if isinstance(node, ast.BinOp):  # <left> <operator> <right>
+        if isinstance(node, ast.BinOp):  # binary
             return func(_eval(node.left), _eval(node.right))
-        elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
+        else:  # unary
             return func(_eval(node.operand))
-        else:
-            raise TypeError(node)
 
 
 if __name__ == "__main__":
