@@ -65,6 +65,7 @@ operators = {
     ast.Mod: args_limit(LIMIT, LIMIT)(op.mod),
     # ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),  # Bug, see issue #39
     ast.USub: args_limit(LIMIT, LIMIT)(op.neg),
+    ast.UAdd: args_limit(LIMIT, LIMIT)(op.pos),
 }
 
 
