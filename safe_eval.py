@@ -76,12 +76,16 @@ def safe_eval(expr):
 def _eval(node):
     if isinstance(node, ast.Num):  # <number>
         return node.n
-    elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
-        return operators[type(node.op)](_eval(node.left), _eval(node.right))
-    elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
-        return operators[type(node.op)](_eval(node.operand))
     else:
-        raise TypeError(node)
+        func = operators.get(type(node.op))
+        if not func:
+            raise SyntaxError(node.op)
+        if isinstance(node, ast.BinOp):  # <left> <operator> <right>
+            return func(_eval(node.left), _eval(node.right))
+        elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
+            return func(_eval(node.operand))
+        else:
+            raise TypeError(node)
 
 
 if __name__ == "__main__":
