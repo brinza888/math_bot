@@ -334,7 +334,7 @@ def euclid_output(message):
 
 @bot.message_handler(commands=["calc"])
 def calc_input(message):
-    m = bot.send_message(message.chat.id, "Операция возведения в степень обозначается <b>^</b>\n\n"
+    m = bot.send_message(message.chat.id, "Операция возведения в степень временно недоступна!\n"
                                           "Введите выражение:",
                          parse_mode="html")
     bot.register_next_step_handler(m, calc_output)
