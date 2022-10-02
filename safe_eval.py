@@ -62,7 +62,7 @@ operators = {
     ast.Mult: args_limit(LIMIT, LIMIT)(op.mul),
     ast.Div: args_limit(LIMIT, LIMIT)(op.truediv),
     ast.FloorDiv: args_limit(LIMIT, LIMIT)(op.floordiv),
-    ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),
+    # ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),  # Bug, see issue #39
     ast.USub: args_limit(LIMIT, LIMIT)(op.neg),
 }
 
