@@ -67,10 +67,10 @@ def get_report_menu(user_id):
 
 def get_type_report_menu(user_id):
     mk = InlineKeyboardMarkup(row_width=1)
-    new_reports_button = InlineKeyboardButton(text="Новые ошибки", callback_data="new_reports")
-    accepted_reports_button = InlineKeyboardButton(text="Принятые ошибки", callback_data="accepted_reports")
-    rejected_reports_button = InlineKeyboardButton(text="Отклоненные ошибки", callback_data="rejected_reports")
-    closed_reports_button = InlineKeyboardButton(text="Закрытые ошибки", callback_data="closed_reports")
+    new_reports_button = InlineKeyboardButton(text="Новые ошибки", callback_data="report_status_NEW")
+    accepted_reports_button = InlineKeyboardButton(text="Принятые ошибки", callback_data="report_status_ACCEPTED")
+    rejected_reports_button = InlineKeyboardButton(text="Отклоненные ошибки", callback_data="report_status_REJECTED")
+    closed_reports_button = InlineKeyboardButton(text="Закрытые ошибки", callback_data="report_status_CLOSED")
     back_button = InlineKeyboardButton(text="Назад", callback_data="back_button")
     if user_id in Config.ADMINS:
         mk.add(new_reports_button, accepted_reports_button, rejected_reports_button, closed_reports_button, back_button)
@@ -441,8 +441,8 @@ def choose_report_types(call):
                                   reply_markup=mk)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "new_reports" or call.data == "rejected_reports" or
-                                              call.data == "accepted_reports" or call.data == "closed_reports")
+@bot.callback_query_handler(func=lambda call: call.data == "report_status_NEW" or call.data == "report_status_REJECTED" or
+                                              call.data == "report_status_ACCEPTED" or call.data == "report_status_CLOSED")
 def list_reports(call):
     db = get_db()
     reports = ReportRecord.get_reports(db, call.data)
@@ -467,18 +467,35 @@ def change_report_status(call):
     if call.data == "close_report":
         if ReportRecord.get_report_by_id(db, id).status == "ACCEPTED":
             ReportRecord.change_status(db, id, call.data)
+            bot.send_message(call.message.chat.id, "Ошибка закрыта")
         else:
             bot.send_message(call.message.chat.id, "Ошибка еще не подтверждена!")
     if call.data == "reject_report":
         ReportRecord.change_status(db, id, call.data)
+        bot.send_message(call.message.chat.id, "Ошибка отклонена")
     close_db()
 
 
 def link_handling(message, id):
-     db = get_db()
-     ReportRecord.change_status(db, id, "accept_report", message.text)
-     bot.send_message(message.chat.id, text=f"Link: {message.text}")
-     close_db()
+     mk = InlineKeyboardMarkup(row_width=1)
+     mk.add(InlineKeyboardButton(text="Подтвердить", callback_data=f"accept_link {id}"),
+            InlineKeyboardButton(text="Отклонить", callback_data=f"reject_link {id}"))
+     bot.send_message(message.chat.id, text=f"<b>Верна ли указана ссылка?</b>\n<b>Link:</b> {message.text}",
+                      parse_mode="html", reply_markup=mk)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split()[0] == "accept_link" or
+                                              call.data.split()[0] == "reject_link")
+def accept_link(call):
+    db = get_db()
+    id = int(call.data.split()[1])
+    if call.data.split()[0] == "accept_link":
+        ReportRecord.change_status(db, id, "accept_report", call.message.text.split('\n')[1].split()[1])
+        bot.send_message(call.message.chat.id, "Ошибка подтверждена")
+    else:
+        bot.send_message(call.message.chat.id, text="Укажите ссылку еще раз")
+        bot.register_next_step_handler(call.message, link_handling, id)
+    close_db()
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "back_button")

@@ -97,7 +97,7 @@ class ReportRecord (Base):
     text = Column(Text, default="{}")
     timestamp = Column(DateTime, default=datetime.now)
     status = Column(String(32))
-    link = Column(String(64))
+    link = Column(String(128))
 
     def __init__(self, *args, **kwargs):
         super(ReportRecord, self).__init__(*args, **kwargs)
@@ -113,16 +113,7 @@ class ReportRecord (Base):
 
     @classmethod
     def get_reports(cls, db: Session, status: str) -> list:
-        if status == "new_reports":
-            reports = db.query(cls).filter(ReportRecord.status.like("NEW")).all()
-        elif status == "accepted_reports":
-            reports = db.query(cls).filter(ReportRecord.status.like("ACCEPTED")).all()
-        elif status == "rejected_reports":
-            reports = db.query(cls).filter(ReportRecord.status.like("REJECTED")).all()
-        elif status == "closed_reports":
-            reports = db.query(cls).filter(ReportRecord.status.like("CLOSED")).all()
-        else:
-            reports = db.query(cls).all()
+        reports = db.query(cls).filter(ReportRecord.status.like(status.split("_")[2])).all()
         return reports
 
     @classmethod
@@ -130,14 +121,14 @@ class ReportRecord (Base):
         return db.query(cls).get(id)
 
     @classmethod
-    def change_status(cls, db: Session, id: int, new_status: str, link=""):
+    def change_status(cls, db: Session, id: int, command: str, link=""):
         report = db.query(cls).get(id)
-        if new_status == "accept_report":
+        if command == "accept_report":
             report.status = "ACCEPTED"
             report.link = link
-        if new_status == "reject_report":
+        if command == "reject_report":
             report.status = "REJECTED"
-        if new_status == "close_report":
+        if command == "close_report":
             report.status = "CLOSED"
         db.commit()
 
