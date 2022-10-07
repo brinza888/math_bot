@@ -419,7 +419,7 @@ def send_about(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "report")
 def callback_inline(call):
-    m = bot.send_message(call.message.chat.id, "Some text for user how to fill report")
+    m = bot.send_message(call.message.chat.id, "Опишите что именно пошло не так")
     bot.register_next_step_handler(m, report_handling)
 
 
@@ -441,8 +441,8 @@ def choose_report_types(call):
                                   reply_markup=mk)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "report_status_NEW" or call.data == "report_status_REJECTED" or
-                                              call.data == "report_status_ACCEPTED" or call.data == "report_status_CLOSED")
+@bot.callback_query_handler(func=lambda call: call.data in ("report_status_NEW", "report_status_REJECTED",
+                                                            "report_status_ACCEPTED", "report_status_CLOSED"))
 def list_reports(call):
     db = get_db()
     reports = ReportRecord.get_reports(db, call.data)
@@ -456,8 +456,7 @@ def list_reports(call):
                          parse_mode="html", reply_markup=mk)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "accept_report" or call.data == "reject_report" or
-                            call.data == "close_report")
+@bot.callback_query_handler(func=lambda call: call.data in ("accept_report", "reject_report", "close_report"))
 def change_report_status(call):
     db = get_db()
     id = call.message.text.split()[2]
@@ -484,8 +483,7 @@ def link_handling(message, id):
                       parse_mode="html", reply_markup=mk)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.split()[0] == "accept_link" or
-                                              call.data.split()[0] == "reject_link")
+@bot.callback_query_handler(func=lambda call: call.data.split()[0] in ("accept_link", "reject_link"))
 def accept_link(call):
     db = get_db()
     id = int(call.data.split()[1])
