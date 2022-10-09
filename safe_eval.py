@@ -62,8 +62,10 @@ operators = {
     ast.Mult: args_limit(LIMIT, LIMIT)(op.mul),
     ast.Div: args_limit(LIMIT, LIMIT)(op.truediv),
     ast.FloorDiv: args_limit(LIMIT, LIMIT)(op.floordiv),
-    ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),
+    ast.Mod: args_limit(LIMIT, LIMIT)(op.mod),
+    # ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),  # Bug, see issue #39
     ast.USub: args_limit(LIMIT, LIMIT)(op.neg),
+    ast.UAdd: args_limit(LIMIT, LIMIT)(op.pos),
 }
 
 
@@ -76,12 +78,16 @@ def safe_eval(expr):
 def _eval(node):
     if isinstance(node, ast.Num):  # <number>
         return node.n
-    elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
-        return operators[type(node.op)](_eval(node.left), _eval(node.right))
-    elif isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
-        return operators[type(node.op)](_eval(node.operand))
     else:
-        raise TypeError(node)
+        if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
+            raise TypeError(node)
+        func = operators.get(type(node.op))
+        if not func:
+            raise SyntaxError(node.op)
+        if isinstance(node, ast.BinOp):  # binary
+            return func(_eval(node.left), _eval(node.right))
+        else:  # unary
+            return func(_eval(node.operand))
 
 
 if __name__ == "__main__":
