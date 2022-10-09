@@ -17,9 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import ast
+import math
 import operator as op
-from functools import wraps
+
+from shunting_yard import ShuntingYard, Operator, Function
+from config import Config
 
 
 class LimitError (ValueError):
@@ -27,67 +29,70 @@ class LimitError (ValueError):
     pass
 
 
-class ExpressionLimitError (LimitError):
-    """ Raises if length of expression more than length limit """
-    pass
+def cotan(x):
+    return 1 / math.tan(x)
 
 
-class ArgumentLimitError (LimitError):
-    """ Raises if numeric argument more than argument limit for this operation """
-    pass
+mathSY = ShuntingYard(
+    [
+        Operator("+", op.add, 1),
+        Operator("-", op.sub, 1),
+        Operator("*", op.mul, 2),
+        Operator("/", op.truediv, 2),
+        Operator("//", op.floordiv, 2),
+        Operator("%", op.mod, 2),
+        Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
+        Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
+        Operator("^", lambda a, b: a ** b, 10, assoc=Operator.Associativity.RIGHT),
+    ],
+    [
+        # general math functions
+        Function("abs", abs),
+        Function("round", round),
+        Function("pow", pow, argc=2),
+        Function("sqrt", math.sqrt),
+        Function("factorial", math.factorial),
 
+        # angular conversion functions
+        Function("deg", math.degrees),
+        Function("rad", math.radians),
 
-def args_limit(*limits):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            check = True
-            for arg, limit in zip(args, limits):
-                check = check and (arg != -1 and arg > limit)
-            if check:
-                raise ArgumentLimitError("Argument size limit exceeded")
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+        # trigonometric functions
+        Function("sin", math.sin),
+        Function("cos", math.cos),
+        Function("tan", math.tan),
+        Function("tg", math.tan),
+        Function("cot", cotan),
+        Function("ctg", cotan),
+        Function("acos", math.acos),
+        Function("arccos", math.acos),
+        Function("asin", math.asin),
+        Function("arcsin", math.asin),
+        Function("atan", math.atan),
+        Function("arctg", math.atan),
 
+        # exponents and logarithms
+        Function("log", math.log, argc=2),
+        Function("lg", math.log10),
+        Function("ln", lambda x: math.log(x)),
+        Function("log2", math.log2),
+        Function("exp", math.exp),
 
-# supported operators
-LINE_LIMIT = 1000
-LIMIT = 50 ** 50
-POW_LIMIT = 30
-
-operators = {
-    ast.Add: args_limit(LIMIT, LIMIT)(op.add),
-    ast.Sub: args_limit(LIMIT, LIMIT)(op.sub),
-    ast.Mult: args_limit(LIMIT, LIMIT)(op.mul),
-    ast.Div: args_limit(LIMIT, LIMIT)(op.truediv),
-    ast.FloorDiv: args_limit(LIMIT, LIMIT)(op.floordiv),
-    ast.Mod: args_limit(LIMIT, LIMIT)(op.mod),
-    # ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),  # Bug, see issue #39
-    ast.USub: args_limit(LIMIT, LIMIT)(op.neg),
-    ast.UAdd: args_limit(LIMIT, LIMIT)(op.pos),
-}
+        # constants functions
+        Function("pi", lambda: math.pi, argc=0),
+        Function("e", lambda: math.e, argc=0),
+    ],
+    variables=False,
+    converter=lambda x: float(x) if "." in x else int(x)
+)
 
 
 def safe_eval(expr):
-    if len(expr) >= LINE_LIMIT:
-        raise ExpressionLimitError("Expression size limit exceeded")
-    return _eval(ast.parse(expr, mode="eval").body)
-
-
-def _eval(node):
-    if isinstance(node, ast.Num):  # <number>
-        return node.n
-    else:
-        if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
-            raise TypeError(node)
-        func = operators.get(type(node.op))
-        if not func:
-            raise SyntaxError(node.op)
-        if isinstance(node, ast.BinOp):  # binary
-            return func(_eval(node.left), _eval(node.right))
-        else:  # unary
-            return func(_eval(node.operand))
+    if len(expr) >= Config.CALC_LINE_LIMIT:
+        raise LimitError("Expression length limit exceeded")
+    pexpr = mathSY.parse(expr)
+    pexpr = mathSY.shunt(pexpr)
+    return pexpr.eval()
 
 
 if __name__ == "__main__":
@@ -97,7 +102,7 @@ if __name__ == "__main__":
         try:
             print(safe_eval(input("> ")))
         except (ValueError, SyntaxError, TypeError) as ex:
-            print(ex.__class__.__name__, ex)
+            print(ex.__class__.__name__, ":", ex)
         except KeyboardInterrupt:
             print("Bye!")
             break
