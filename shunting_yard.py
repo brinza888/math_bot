@@ -254,7 +254,7 @@ class ShuntingYard (Generic[T]):
                 while stack:
                     top = stack[-1]
                     if isinstance(top, Operator):
-                        if top.priority > token.priority or \
+                        if (top.priority > token.priority and token.ary != Operator.Ary.UNARY) or \
                                 (top.priority == token.priority and token.assoc == Operator.Associativity.LEFT):
                             output.append(stack.pop())
                         else:
