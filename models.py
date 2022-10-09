@@ -87,6 +87,52 @@ class LogRecord (Base):
         )
 
 
+class ReportRecord (Base):
+    __tablename__ = "reports"
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, ForeignKey("user.id"))
+
+    text = Column(Text, default="{}")
+    timestamp = Column(DateTime, default=datetime.now)
+    status = Column(String(32))
+    link = Column(String(128))
+
+    def __init__(self, *args, **kwargs):
+        super(ReportRecord, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def new(cls, user: "User", text: str):
+        return cls(
+            user_id=user.id,
+            text=text,
+            status="NEW",
+            link=None,
+        )
+
+    @classmethod
+    def get_reports(cls, db: Session, status: str) -> list:
+        reports = db.query(cls).filter(ReportRecord.status.like(status.split("_")[2])).all()
+        return reports
+
+    @classmethod
+    def get_report_by_id(cls, db: Session, id: int):
+        return db.query(cls).get(id)
+
+    @classmethod
+    def change_status(cls, db: Session, id: int, command: str, link=""):
+        report = db.query(cls).get(id)
+        if command == "accept_report":
+            report.status = "ACCEPTED"
+            report.link = link
+        if command == "reject_report":
+            report.status = "REJECTED"
+        if command == "close_report":
+            report.status = "CLOSED"
+        db.commit()
+
+
 def get_db():
     session = Session()
     return session
