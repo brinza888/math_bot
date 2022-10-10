@@ -16,6 +16,10 @@ class InvalidArguments (SyntaxError):
     pass
 
 
+class CalculationLimitError (ValueError):
+    pass
+
+
 T = TypeVar("T")
 
 
@@ -59,14 +63,20 @@ class Variable (Generic[T], Token):
 class Evaluator (Generic[T], Token):
     func: Callable[..., T]
     argc: int
+    limiter: Callable[..., bool]
 
-    def __init__(self, func: Callable[..., T], argc: int):
+    def __init__(self, func: Callable[..., T], argc: int,
+                 limiter: Callable[..., bool]):
         super().__init__()
         self.func = func
         self.argc = argc
+        self.limiter = limiter
 
     def eval(self, *args: Number) -> Number:
-        return Number(self.func(*[x.value for x in args]))
+        values = [x.value for x in args]
+        if not self.limiter(*values):
+            raise CalculationLimitError(f"Arguments failed limitations check in {self}")
+        return Number(self.func(*values))
 
 
 class Operator (Evaluator):
@@ -85,9 +95,10 @@ class Operator (Evaluator):
 
     def __init__(self, char: str, func: Callable[..., T], priority: int = 1,
                  assoc: Associativity = Associativity.LEFT,
-                 ary: Ary = Ary.BINARY):
+                 ary: Ary = Ary.BINARY,
+                 limiter: Callable[..., bool] = lambda *x: True):
         argc = 2 if ary == Operator.Ary.BINARY else 1
-        super(Operator, self).__init__(func, argc)
+        super(Operator, self).__init__(func, argc, limiter)
         self.char = char
         self.priority = priority
         self.assoc = assoc
@@ -100,8 +111,9 @@ class Operator (Evaluator):
 class Function (Evaluator):
     name: str
 
-    def __init__(self, name: str, func: Callable[..., T], argc: int = 1):
-        super(Function, self).__init__(func, argc)
+    def __init__(self, name: str, func: Callable[..., T], argc: int = 1,
+                 limiter: Callable[..., bool] = lambda *x: True):
+        super(Function, self).__init__(func, argc, limiter)
         self.name = name
 
     def __repr__(self):
