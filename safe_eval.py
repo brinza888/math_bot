@@ -40,7 +40,7 @@ mathSY = ShuntingYard(
         Operator("-", op.sub, 1),
         Operator("*", op.mul, 2),
         Operator("/", op.truediv, 2),
-        Operator("//", op.floordiv, 2),
+        Operator(":", op.floordiv, 2),
         Operator("%", op.mod, 2),
         Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
         Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
