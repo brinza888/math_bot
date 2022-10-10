@@ -4,15 +4,15 @@ from abc import ABCMeta
 from enum import Enum
 
 
-class InvalidInput (ValueError):
+class InvalidSyntax (SyntaxError):
     pass
 
 
-class InvalidSyntax (ValueError):
+class InvalidName (NameError):
     pass
 
 
-class InvalidName (ValueError):
+class InvalidArguments (SyntaxError):
     pass
 
 
@@ -146,16 +146,16 @@ class Expression (Generic[T]):
                     a = stack.pop()
                     stack.append(top(a))
                 else:
-                    raise InvalidInput("Operator ary not match UNARY or BINARY")
+                    raise TypeError("Operator ary not match UNARY or BINARY")
             elif isinstance(top, Function):
                 if len(stack) < top.argc:
-                    raise InvalidInput(f"Not enough arguments for function '{top.name}'")
+                    raise InvalidArguments(f"Not enough arguments for function '{top.name}'")
                 args = [stack.pop() for _ in range(top.argc)]
                 stack.append(top(*args[::-1]))
             else:
-                raise InvalidInput(f"Met not allowed token in RPN: {top}")
+                raise TypeError(f"Met not allowed token in RPN: {top}")
         if len(stack) > 1:
-            raise InvalidInput("Stack size grater than 1 after evaluation")
+            raise InvalidSyntax("Stack size greater than 1 after evaluation")
         return stack[0].value
 
     def __repr__(self):
@@ -180,7 +180,7 @@ class ShuntingYard (Generic[T]):
 
     def parse(self, string: str) -> Expression:
         if not string:
-            raise InvalidInput("String is empty, nothing to parse")
+            raise InvalidSyntax("String is empty, nothing to parse")
         input = deque(string)
         ary_state = Operator.Ary.UNARY
         expr = Expression()
@@ -227,7 +227,7 @@ class ShuntingYard (Generic[T]):
                 expr.push(CloseBrace())
                 ary_state = Operator.Ary.BINARY
             else:
-                raise InvalidInput(f"Invalid character '{char}' at pos {position}")
+                raise InvalidSyntax(f"Invalid character '{char}' at pos {position}")
             position += 1
         return expr
 
@@ -249,7 +249,7 @@ class ShuntingYard (Generic[T]):
                         break
                     output.append(stack.pop())
                 if not args_check:
-                    raise SyntaxError("Missing argument separator or left brace in expression")
+                    raise InvalidSyntax("Missing argument separator or left brace in expression")
             elif isinstance(token, Operator):
                 while stack:
                     top = stack[-1]
@@ -275,11 +275,11 @@ class ShuntingYard (Generic[T]):
                         break
                     output.append(top)
                 if not braces_check:
-                    raise SyntaxError("Missing left brace in expression")
+                    raise InvalidSyntax("Missing left brace in expression")
         while stack:
             top = stack.pop()
             if isinstance(top, OpenBrace):
-                raise SyntaxError("Missing right brace in expression")
+                raise InvalidSyntax("Missing right brace in expression")
             output.append(top)
         expr.tokens = output
         expr.type = Expression.Type.RPN

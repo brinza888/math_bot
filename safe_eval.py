@@ -21,6 +21,7 @@ import math
 import operator as op
 
 from shunting_yard import ShuntingYard, Operator, Function
+from shunting_yard import InvalidSyntax, InvalidName, InvalidArguments
 from config import Config
 
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     while True:
         try:
             print(safe_eval(input("> ")))
-        except (ValueError, SyntaxError, TypeError) as ex:
+        except (InvalidSyntax, InvalidName, InvalidArguments, ArithmeticError) as ex:
             print(ex.__class__.__name__, ":", ex)
         except KeyboardInterrupt:
             print("Bye!")
