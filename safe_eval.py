@@ -44,7 +44,7 @@ mathSY = ShuntingYard(
         Operator("%", op.mod, 2),
         Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
         Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
-        Operator("^", lambda a, b: a ** b, 10, assoc=Operator.Associativity.RIGHT),
+        Operator("^", op.pow, 10, assoc=Operator.Associativity.RIGHT),
     ],
     [
         # general math functions
