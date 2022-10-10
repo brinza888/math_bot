@@ -78,12 +78,12 @@ mathSY = ShuntingYard(
         Function("ln", lambda x: math.log(x)),
         Function("log2", math.log2),
         Function("exp", math.exp),
-
-        # constants functions
-        Function("pi", lambda: math.pi, argc=0),
-        Function("e", lambda: math.e, argc=0),
     ],
-    variables=False,
+    use_variables=False,
+    default_variables={
+        "pi": math.pi,
+        "e": math.e
+    },
     converter=lambda x: float(x) if "." in x else int(x)
 )
 

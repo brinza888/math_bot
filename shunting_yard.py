@@ -1,4 +1,4 @@
-from typing import Callable, TypeVar, Generic, List, Dict, FrozenSet, Deque, Tuple
+from typing import Callable, TypeVar, Generic, List, Dict, Set, FrozenSet, Deque, Tuple, Optional
 from collections import deque
 from abc import ABCMeta
 from enum import Enum
@@ -58,12 +58,14 @@ class Variable (Generic[T], Token):
 
 class Evaluator (Generic[T], Token):
     func: Callable[..., T]
+    argc: int
 
-    def __init__(self, func: Callable[..., T]):
+    def __init__(self, func: Callable[..., T], argc: int):
         super().__init__()
         self.func = func
+        self.argc = argc
 
-    def __call__(self, *args: Number) -> Number:
+    def eval(self, *args: Number) -> Number:
         return Number(self.func(*[x.value for x in args]))
 
 
@@ -84,7 +86,8 @@ class Operator (Evaluator):
     def __init__(self, char: str, func: Callable[..., T], priority: int = 1,
                  assoc: Associativity = Associativity.LEFT,
                  ary: Ary = Ary.BINARY):
-        super(Operator, self).__init__(func)
+        argc = 2 if ary == Operator.Ary.BINARY else 1
+        super(Operator, self).__init__(func, argc)
         self.char = char
         self.priority = priority
         self.assoc = assoc
@@ -96,12 +99,10 @@ class Operator (Evaluator):
 
 class Function (Evaluator):
     name: str
-    argc: int
 
     def __init__(self, name: str, func: Callable[..., T], argc: int = 1):
-        super(Function, self).__init__(func)
+        super(Function, self).__init__(func, argc)
         self.name = name
-        self.argc = argc
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.name}>"
@@ -112,20 +113,24 @@ class Expression (Generic[T]):
         Parsed = 0
         RPN = 1
 
-    def __init__(self):
+    def __init__(self, default_variables: Optional[Dict[str, T]] = None):
         self.type: Expression.Type = Expression.Type.Parsed
         self.tokens: Deque[Token] = deque()
-        self.variables: List[str] = []
+        self.variables: Set[str] = set()
+        self.default_variables = default_variables if default_variables else {}
 
     def push(self, token: Token):
         self.tokens.append(token)
 
     def register_variable(self, name: str):
-        self.variables.append(name)
+        self.variables.add(name)
 
-    def eval(self, variables: Dict[str, T] = None) -> T:
-        if not variables:
-            variables = {}
+    def eval(self, variables: Optional[Dict[str, T]] = None) -> T:
+        vars_ = self.default_variables.copy()
+        if variables:
+            vars_.update(variables)
+        if self.variables - set(vars_.keys()):
+            raise KeyError("Not all variables values are given to evaluate this expression")
         if self.type != Expression.Type.RPN:
             raise TypeError("Expression must be in RPN")
         tokens = self.tokens.copy()
@@ -135,23 +140,15 @@ class Expression (Generic[T]):
             if isinstance(top, Number):
                 stack.append(top)
             elif isinstance(top, Variable):
-                if top.name not in variables:
+                if top.name not in vars_:
                     raise InvalidName(f"Variable value is not defined for '{top.name}'")
-                stack.append(Number(variables[top.name]))
-            elif isinstance(top, Operator):
-                if top.ary == Operator.Ary.BINARY:
-                    b, a = stack.pop(), stack.pop()
-                    stack.append(top(a, b))
-                elif top.ary == Operator.Ary.UNARY:
-                    a = stack.pop()
-                    stack.append(top(a))
-                else:
-                    raise TypeError("Operator ary not match UNARY or BINARY")
-            elif isinstance(top, Function):
+                stack.append(Number(vars_[top.name]))
+            elif isinstance(top, Evaluator):
                 if len(stack) < top.argc:
-                    raise InvalidArguments(f"Not enough arguments for function '{top.name}'")
+                    raise InvalidArguments(f"Not enough arguments for evaluator")
                 args = [stack.pop() for _ in range(top.argc)]
-                stack.append(top(*args[::-1]))
+                args.reverse()
+                stack.append(top.eval(*args))
             else:
                 raise TypeError(f"Met not allowed token in RPN: {top}")
         if len(stack) > 1:
@@ -165,7 +162,8 @@ class Expression (Generic[T]):
 class ShuntingYard (Generic[T]):
     def __init__(self, operators: List[Operator], functions: List[Function],
                  whitespaces: FrozenSet[str] = frozenset((" ", "\t", "\n")),
-                 variables: bool = False,
+                 use_variables: bool = False,
+                 default_variables: Optional[Dict[str, T]] = None,
                  converter: Callable[[str], T] = int,
                  args_separator: str = ",",
                  braces: Tuple[str, str] = ("(", ")")):
@@ -173,7 +171,8 @@ class ShuntingYard (Generic[T]):
         self.binary_operators = {op.char: op for op in operators if op.ary == Operator.Ary.BINARY}
         self.functions = {f.name: f for f in functions}
         self.whitespaces = whitespaces
-        self.variables = variables
+        self.use_variables = use_variables
+        self.default_variables = default_variables if default_variables else {}
         self.converter = converter
         self.args_separator = args_separator
         self.open_brace, self.close_brace = braces
@@ -183,7 +182,7 @@ class ShuntingYard (Generic[T]):
             raise InvalidSyntax("String is empty, nothing to parse")
         input = deque(string)
         ary_state = Operator.Ary.UNARY
-        expr = Expression()
+        expr = Expression(self.default_variables)
         position = 0
         while input:
             char = input.popleft()
@@ -204,7 +203,7 @@ class ShuntingYard (Generic[T]):
                     expr.push(self.functions[name])
                     ary_state = Operator.Ary.UNARY
                 else:
-                    if not self.variables:
+                    if not self.use_variables and name not in self.default_variables:
                         raise InvalidName(f"Invalid name '{name}' at pos {position}")
                     expr.register_variable(name)
                     expr.push(Variable(name))
@@ -293,7 +292,7 @@ if __name__ == "__main__":
             Operator("-", lambda a, b: a - b, 1),
             Operator("*", lambda a, b: a * b, 2),
             Operator("/", lambda a, b: a / b, 2),
-            Operator("//", lambda a, b: a // b, 2),
+            Operator(":", lambda a, b: a // b, 2),
             Operator("%", lambda a, b: a % b, 2),
             Operator("-", lambda a: -a, 5, ary=Operator.Ary.UNARY),
             Operator("^", lambda a, b: a ** b, 10, assoc=Operator.Associativity.RIGHT),
@@ -302,7 +301,8 @@ if __name__ == "__main__":
             Function("abs", lambda x: abs(x)),
             Function("mod", lambda a, b: a % b, argc=2)
         ],
-        variables=True,
+        use_variables=False,
+        default_variables={"pi": 3.1415, "e": 2.7182},
         converter=lambda x: float(x) if "." in x else int(x)
     )
     pexpr = sy.parse(input("> "))
