@@ -27,17 +27,14 @@ from telebot.apihelper import ApiTelegramException
 from git import Repo
 
 from config import *
-from logic import build_table, OPS
+from logic import build_table
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
 from rings import *
-from safe_eval import safe_eval, ExpressionLengthError
+from safe_eval import safe_eval, CalculationLimitError
 from statistics import log_function_call
 from models import User, get_db, close_db, ReportRecord
 
 bot = telebot.TeleBot(Config.BOT_TOKEN)
-
-# generate supported logic operators description
-logic_ops_description = "\n".join([f"{op} {op_data[3]}" for op, op_data in OPS.items()])
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)  # this markup is bot menu
 menu.add(KeyboardButton("/help"))
@@ -219,8 +216,7 @@ def matrix_input(message, action):
 
 @bot.message_handler(commands=["logic"])
 def logic_input(message):
-    m = bot.send_message(message.chat.id, f"<u>Допустимые операторы:</u>\n{logic_ops_description}\n\n"
-                                          "Введите логическое выражение:",
+    m = bot.send_message(message.chat.id, "Введите логическое выражение:",  # TODO: make logic operators description
                          reply_markup=hide_menu,
                          parse_mode="html")
     bot.register_next_step_handler(m, logic_output)
@@ -229,7 +225,7 @@ def logic_input(message):
 @log_function_call("logic")
 def logic_output(message):
     try:
-        table, variables = build_table(message.text, Config.MAX_VARS)
+        table, variables = build_table(message.text)
         out = StringIO()  # abstract file (file-object)
         print(*variables, "F", file=out, sep=" " * 2)
         for row in table:
@@ -237,9 +233,9 @@ def logic_output(message):
         answer = f"<code>{out.getvalue()}</code>"
         bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
         return answer
-    except (AttributeError, SyntaxError):
+    except (AttributeError, SyntaxError):  # TODO: new shunting yard exception handling
         bot.send_message(message.chat.id, "Ошибка ввода данных", reply_markup=menu)
-    except ValueError:
+    except CalculationLimitError:
         bot.send_message(message.chat.id, f"Ограничение по кол-ву переменных: {Config.MAX_VARS}")
 
 
@@ -384,9 +380,9 @@ def calc_input(message):
 def calc_output(message):
     try:
         answer = str(safe_eval(message.text))
-    except (SyntaxError, TypeError):
+    except (SyntaxError, TypeError):  # TODO: new shunting yard exception handling
         bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
-    except ExpressionLengthError:
+    except CalculationLimitError:
         bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
     except ZeroDivisionError:
         bot.send_message(message.chat.id, "Деление на 0 не определено")
