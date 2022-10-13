@@ -117,8 +117,9 @@ class Evaluator (Generic[T], Token):
 
 class Operator (Evaluator):
     class Ary (Enum):
-        UNARY = 0
-        BINARY = 1
+        NONE = 0
+        UNARY = 1
+        BINARY = 2
 
     class Associativity(Enum):
         LEFT = 0
@@ -141,7 +142,7 @@ class Operator (Evaluator):
         self.ary = ary
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.char}>"
+        return f"<{self.__class__.__name__} {'U' if self.ary == Operator.Ary.UNARY else 'B'}: {self.char}>"
 
 
 class Function (Evaluator):
@@ -244,6 +245,7 @@ class ShuntingYard (Generic[T]):
                 pass
             elif char in self.unary_operators and ary_state == Operator.Ary.UNARY:
                 expr.push(self.unary_operators[char])
+                ary_state = Operator.Ary.NONE
             elif char in self.binary_operators and ary_state == Operator.Ary.BINARY:
                 expr.push(self.binary_operators[char])
                 ary_state = Operator.Ary.UNARY
@@ -255,7 +257,7 @@ class ShuntingYard (Generic[T]):
                     name += char
                 if name in self.functions:
                     expr.push(self.functions[name])
-                    ary_state = Operator.Ary.UNARY
+                    ary_state = Operator.Ary.NONE
                 else:
                     if not self.use_variables and name not in self.default_variables:
                         raise InvalidName(f"Invalid name '{name}' at pos {position}")
@@ -349,6 +351,7 @@ if __name__ == "__main__":
             Operator(":", lambda a, b: a // b, 2),
             Operator("%", lambda a, b: a % b, 2),
             Operator("-", lambda a: -a, 5, ary=Operator.Ary.UNARY),
+            Operator("+", lambda a: +a, 5, ary=Operator.Ary.UNARY),
             Operator("^", lambda a, b: a ** b, 10, assoc=Operator.Associativity.RIGHT),
         ],
         [
