@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
+#
+# This file is part of math_bot.
+#
+# math_bot is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# any later version.
+#
+# math_bot is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from typing import Callable, TypeVar, Generic, List, Dict, Set, FrozenSet, Deque, Tuple, Optional
 from collections import deque
 from abc import ABCMeta
@@ -61,12 +80,14 @@ class Variable (Generic[T], Token):
 
 
 class Evaluator (Generic[T], Token):
+    LimiterFunc = Callable[[List[T]], bool]
+
     func: Callable[..., T]
     argc: int
-    limiter: Callable[..., bool]
+    limiter: Optional[LimiterFunc]
 
     def __init__(self, func: Callable[..., T], argc: int,
-                 limiter: Callable[..., bool]):
+                 limiter: Optional[LimiterFunc] = None):
         super().__init__()
         self.func = func
         self.argc = argc
@@ -74,9 +95,24 @@ class Evaluator (Generic[T], Token):
 
     def eval(self, *args: Number) -> Number:
         values = [x.value for x in args]
-        if not self.limiter(*values):
+        if self.limiter and not self.limiter(values):
             raise CalculationLimitError(f"Arguments failed limitations check in {self}")
         return Number(self.func(*values))
+
+    @staticmethod
+    def limit(union_limit: Optional[T], every_limit: Optional[T]) -> LimiterFunc:
+        def inner_limiter(args):
+            union = every = True
+            if union_limit is not None:
+                union = not all([x > union_limit for x in args])
+            if every_limit is not None:
+                every = not any([x > every_limit for x in args])
+            return union and every
+        return inner_limiter
+
+    @staticmethod
+    def no_limit():
+        return lambda args: True
 
 
 class Operator (Evaluator):
@@ -96,7 +132,7 @@ class Operator (Evaluator):
     def __init__(self, char: str, func: Callable[..., T], priority: int = 1,
                  assoc: Associativity = Associativity.LEFT,
                  ary: Ary = Ary.BINARY,
-                 limiter: Callable[..., bool] = lambda *x: True):
+                 limiter: Optional[Evaluator.LimiterFunc] = None):
         argc = 2 if ary == Operator.Ary.BINARY else 1
         super(Operator, self).__init__(func, argc, limiter)
         self.char = char
@@ -112,7 +148,7 @@ class Function (Evaluator):
     name: str
 
     def __init__(self, name: str, func: Callable[..., T], argc: int = 1,
-                 limiter: Callable[..., bool] = lambda *x: True):
+                 limiter: Optional[Evaluator.LimiterFunc] = None):
         super(Function, self).__init__(func, argc, limiter)
         self.name = name
 
@@ -178,7 +214,13 @@ class ShuntingYard (Generic[T]):
                  default_variables: Optional[Dict[str, T]] = None,
                  converter: Callable[[str], T] = int,
                  args_separator: str = ",",
-                 braces: Tuple[str, str] = ("(", ")")):
+                 braces: Tuple[str, str] = ("(", ")"),
+                 default_limiter: Optional[Evaluator.LimiterFunc] = None):
+        evaluators: List[Evaluator] = operators.copy()
+        evaluators += functions.copy()
+        for ev in evaluators:
+            if not ev.limiter:
+                ev.limiter = default_limiter
         self.unary_operators = {op.char: op for op in operators if op.ary == Operator.Ary.UNARY}
         self.binary_operators = {op.char: op for op in operators if op.ary == Operator.Ary.BINARY}
         self.functions = {f.name: f for f in functions}

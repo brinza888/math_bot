@@ -30,7 +30,7 @@ from config import *
 from logic import build_table, OPS
 from matrix import Matrix, SizesMatchError, SquareMatrixRequired, NonInvertibleMatrix
 from rings import *
-from safe_eval import safe_eval, LimitError
+from safe_eval import safe_eval, ExpressionLengthError
 from statistics import log_function_call
 from models import User, get_db, close_db, ReportRecord
 
@@ -386,7 +386,7 @@ def calc_output(message):
         answer = str(safe_eval(message.text))
     except (SyntaxError, TypeError):
         bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
-    except LimitError:
+    except ExpressionLengthError:
         bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
     except ZeroDivisionError:
         bot.send_message(message.chat.id, "Деление на 0 не определено")
