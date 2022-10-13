@@ -102,9 +102,21 @@ if __name__ == "__main__":
     while True:
         try:
             result = safe_eval(input("> "))
-            print(f"{result}")
-        except (InvalidSyntax, InvalidName, InvalidArguments, CalculationLimitError, ArithmeticError) as ex:
-            print(ex.__class__.__name__, ":", ex)
+            print(result)
+        except InvalidSyntax:
+            print("Invalid syntax in expression")
+        except InvalidName:
+            print("Undefined name in expression")
+        except InvalidArguments:
+            print("Invalid usage of function (arguments)")
+        except CalculationLimitError:
+            print("Calculation reached limitations")
+        except ZeroDivisionError:
+            print("Division by zero")
+        except ArithmeticError:
+            print("Arithmetic error")
+        except ValueError:
+            print("Value not in domain")
         except KeyboardInterrupt:
             print("Bye!")
             break
