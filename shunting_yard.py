@@ -100,13 +100,13 @@ class Evaluator (Generic[T], Token):
         return Number(self.func(*values))
 
     @staticmethod
-    def limit(union_limit: Optional[T], every_limit: Optional[T]) -> LimiterFunc:
+    def limit(union_limit: Optional[T], each_limit: Optional[T]) -> LimiterFunc:
         def inner_limiter(args):
             union = every = True
             if union_limit is not None:
                 union = not all([x > union_limit for x in args])
-            if every_limit is not None:
-                every = not any([x > every_limit for x in args])
+            if each_limit is not None:
+                every = not any([x > each_limit for x in args])
             return union and every
         return inner_limiter
 

@@ -25,11 +25,6 @@ from shunting_yard import InvalidSyntax, InvalidName, InvalidArguments, Calculat
 from config import Config
 
 
-class ExpressionLengthError (ValueError):
-    """ Expression length limit """
-    pass
-
-
 def cotan(x):
     return 1 / math.tan(x)
 
@@ -44,15 +39,18 @@ mathSY = ShuntingYard(
         Operator("%", op.mod, 2),
         Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
         Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
-        Operator("^", op.pow, 10, assoc=Operator.Associativity.RIGHT, limiter=Evaluator.limit(30, 50)),
+        Operator("^", op.pow, 10, assoc=Operator.Associativity.RIGHT,
+                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
     ],
     [
         # general math functions
         Function("abs", abs),
         Function("round", round),
-        Function("pow", pow, argc=2, limiter=Evaluator.limit(30, 50)),
+        Function("pow", pow, argc=2,
+                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
         Function("sqrt", math.sqrt),
-        Function("factorial", math.factorial, limiter=Evaluator.limit(20, 20)),
+        Function("factorial", math.factorial,
+                 limiter=Evaluator.limit(Config.CALC_FACTORIAL_LIMIT, None)),
 
         # angular conversion functions
         Function("deg", math.degrees),
@@ -77,7 +75,8 @@ mathSY = ShuntingYard(
         Function("lg", math.log10),
         Function("ln", lambda x: math.log(x)),
         Function("log2", math.log2),
-        Function("exp", math.exp, limiter=Evaluator.limit(50, 50)),
+        Function("exp", math.exp,
+                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
     ],
     use_variables=False,
     default_variables={
@@ -85,13 +84,13 @@ mathSY = ShuntingYard(
         "e": math.e
     },
     converter=lambda x: float(x) if "." in x else int(x),
-    default_limiter=Evaluator.limit(10**10, 10**15)
+    default_limiter=Evaluator.limit(None, Config.CALC_OPERAND_LIMIT)
 )
 
 
 def safe_eval(expr):
     if len(expr) >= Config.CALC_LINE_LIMIT:
-        raise ExpressionLengthError("Expression length limit exceeded")
+        raise CalculationLimitError("Expression length limit exceeded")
     pexpr = mathSY.parse(expr)
     pexpr = mathSY.shunt(pexpr)
     return pexpr.eval()
@@ -103,7 +102,7 @@ if __name__ == "__main__":
     while True:
         try:
             result = safe_eval(input("> "))
-            print(f"{result:G}")
+            print(f"{result}")
         except (InvalidSyntax, InvalidName, InvalidArguments, CalculationLimitError, ArithmeticError) as ex:
             print(ex.__class__.__name__, ":", ex)
         except KeyboardInterrupt:
