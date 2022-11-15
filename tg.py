@@ -436,7 +436,7 @@ def callback_inline(call):
 def report_handling(message):
     db = get_db()
     user = User.get_or_create(db, message.from_user.id, message.from_user.last_name,
-                                          message.from_user.first_name, message.from_user.username)
+                              message.from_user.first_name, message.from_user.username)
     rec = ReportRecord.new(user, message.text)
     db.add(rec)
     db.commit()
@@ -486,11 +486,11 @@ def change_report_status(call):
 
 
 def link_handling(message, id):
-     mk = InlineKeyboardMarkup(row_width=1)
-     mk.add(InlineKeyboardButton(text="Подтвердить", callback_data=f"accept_link {id}"),
-            InlineKeyboardButton(text="Отклонить", callback_data=f"reject_link {id}"))
-     bot.send_message(message.chat.id, text=f"<b>Верна ли указана ссылка?</b>\n<b>Link:</b> {message.text}",
-                      parse_mode="html", reply_markup=mk)
+    mk = InlineKeyboardMarkup(row_width=1)
+    mk.add(InlineKeyboardButton(text="Подтвердить", callback_data=f"accept_link {id}"),
+           InlineKeyboardButton(text="Отклонить", callback_data=f"reject_link {id}"))
+    bot.send_message(message.chat.id, text=f"<b>Верна ли указана ссылка?</b>\n<b>Link:</b> {message.text}",
+                     parse_mode="html", reply_markup=mk)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split()[0] in ("accept_link", "reject_link"))
