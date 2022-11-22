@@ -67,6 +67,12 @@ def get_report_menu(user_id):
     return mk
 
 
+def get_cancel_menu():
+    mk = InlineKeyboardMarkup(row_width=1)
+    mk.add(InlineKeyboardButton(text="Назад", callback_data="cancel"))
+    return mk
+
+
 def get_type_report_menu(user_id):
     mk = InlineKeyboardMarkup(row_width=1)
     new_reports_button = InlineKeyboardButton(text="Новые ошибки", callback_data="report_status_NEW")
@@ -429,7 +435,8 @@ def send_about(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "report")
 def callback_inline(call):
-    m = bot.send_message(call.message.chat.id, "Опишите что именно пошло не так")
+    mk = get_cancel_menu()
+    m = bot.send_message(call.message.chat.id, "Опишите что именно пошло не так", reply_markup=mk)
     bot.register_next_step_handler(m, report_handling)
 
 
@@ -442,6 +449,12 @@ def report_handling(message):
     db.commit()
     close_db()
     bot.send_message(message.chat.id, "Спасибо, что сообщаете нам о проблемах!")
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "cancel")
+def cancel_report(call):
+    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    bot.clear_step_handler_by_chat_id(call.message.chat.id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "view_reports")
@@ -489,7 +502,7 @@ def link_handling(message, id):
     mk = InlineKeyboardMarkup(row_width=1)
     mk.add(InlineKeyboardButton(text="Подтвердить", callback_data=f"accept_link {id}"),
            InlineKeyboardButton(text="Отклонить", callback_data=f"reject_link {id}"))
-    bot.send_message(message.chat.id, text=f"<b>Верна ли указана ссылка?</b>\n<b>Link:</b> {message.text}",
+    bot.send_message(message.chat.id, text=f"<b>Верно ли указана ссылка?</b>\n<b>Link:</b> {message.text}",
                      parse_mode="html", reply_markup=mk)
 
 
