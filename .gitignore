@@ -5,3 +5,4 @@ __pycache__
 *.db
 logs
 *.env
+.DS_Store
