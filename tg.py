@@ -85,14 +85,16 @@ def get_type_report_menu(user_id):
     return mk
 
 
-def get_admin_menu(user_id):
+def get_admin_menu(call):
     mk = InlineKeyboardMarkup(row_width=1)
-    accept_report_button = InlineKeyboardButton(text="Принять ошибку", callback_data="accept_report")
-    reject_report_button = InlineKeyboardButton(text="Отклонить ошибку", callback_data="reject_report")
-    close_report_button = InlineKeyboardButton(text="Закрыть ошибку", callback_data="close_report")
-    if user_id in Config.ADMINS:
-        mk.add(accept_report_button, reject_report_button, close_report_button)
-    return mk
+    if call.data not in ["report_status_CLOSED", "report_status_REJECTED"] and call.from_user.id in Config.ADMINS:
+        if call.data not in ["report_status_ACCEPTED"]:
+            accept_report_button = InlineKeyboardButton(text="Принять ошибку", callback_data="accept_report")
+            mk.add(accept_report_button)
+        reject_report_button = InlineKeyboardButton(text="Отклонить ошибку", callback_data="reject_report")
+        close_report_button = InlineKeyboardButton(text="Закрыть ошибку", callback_data="close_report")
+        mk.add(reject_report_button, close_report_button)
+        return mk
 
 
 @bot.message_handler(commands=["start"])
@@ -470,7 +472,7 @@ def list_reports(call):
     db = get_db()
     reports = ReportRecord.get_reports(db, call.data)
     close_db()
-    mk = get_admin_menu(call.from_user.id)
+    mk = get_admin_menu(call)
     for report in reports:
         bot.send_message(chat_id=call.message.chat.id, text=f"Report id: {report.id}\nUser id: {report.user_id}\n"
                                                             f"Timestamp: {report.timestamp}\n\n"
