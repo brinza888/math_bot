@@ -1,5 +1,9 @@
+"""Test cases for functions from file rings.py
+"""
+
 import unittest
-from rings import factorize
+import random
+from rings import factorize, defactorize
 
 
 class TestFactorize(unittest.TestCase):
@@ -36,3 +40,14 @@ class TestFactorize(unittest.TestCase):
         self.assertEqual(factorize(175436), {2: 2, 61: 1, 719: 1})
         self.assertEqual(factorize(13026450), {2: 1, 3: 1, 5: 2, 86843: 1})
         self.assertEqual(factorize(596312), {2: 3, 131: 1, 569: 1})
+
+
+class TestDefactorize(unittest.TestCase):
+    def test_specific_cases(self):
+        self.assertEqual(defactorize({1: 0}), 1)
+
+    def test_auto(self):
+        for _ in range(10):
+            number = random.randint(1, 10**7)
+            factorization = factorize(number)
+            self.assertEqual(defactorize(factorization), number)
