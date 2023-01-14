@@ -52,7 +52,7 @@ class Config:
     CALC_POW_UNION_LIMIT = int(os.getenv("CALC_POW_UNION_LIMIT", 30))
     CALC_POW_EACH_LIMIT = int(os.getenv("CALC_POW_EACH_LIMIT", 50))
     # /calc factorial limit
-    CALC_FACTORIAL_LIMIT = int(os.getenv("CALC_POW_LIMIT", 50))
+    CALC_FACTORIAL_LIMIT = int(os.getenv("CALC_FACTORIAL_LIMIT", 50))
 
     # Project information
     GITHUB_LINK = os.getenv("GITHUB_LINK", "https://github.com/BrinzaBezrukoff/math_bot")
