@@ -44,6 +44,16 @@ class Config:
     # max number that can be factorized
     FACTORIZE_MAX = int(os.getenv("FACTORIZE_MAX", 10 ** 12))
 
+    # /calc line limit
+    CALC_LINE_LIMIT = int(os.getenv("CALC_LINE_LIMIT", 1000))
+    # /calc operand limit
+    CALC_OPERAND_LIMIT = int(os.getenv("CALC_OPERAND_LIMIT", 50 ** 50))
+    # /calc power limit
+    CALC_POW_UNION_LIMIT = int(os.getenv("CALC_POW_UNION_LIMIT", 30))
+    CALC_POW_EACH_LIMIT = int(os.getenv("CALC_POW_EACH_LIMIT", 50))
+    # /calc factorial limit
+    CALC_FACTORIAL_LIMIT = int(os.getenv("CALC_FACTORIAL_LIMIT", 50))
+
     # Project information
     GITHUB_LINK = os.getenv("GITHUB_LINK", "https://github.com/BrinzaBezrukoff/math_bot")
     CHANNEL_LINK = os.getenv("CHANNEL_LINK", "https://t.me/math_bot_news")
