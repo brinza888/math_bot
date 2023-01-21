@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
+# Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
 #
 # This file is part of math_bot.
 #
@@ -436,7 +436,7 @@ def send_about(message):
     bot.send_message(message.chat.id,
                      f"Версия{warning}: <b>{version}</b>\n"
                      f"Наш канал: {Config.CHANNEL_LINK}\n"
-                     f"\nCopyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
+                     f"\nCopyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
                      f"GitHub: {Config.GITHUB_LINK}\n"
                      f"<b>Под лицензией GNU-GPL 2.0-or-latter</b>",
                      parse_mode="html")
@@ -536,6 +536,6 @@ def back_func(call):
 
 
 if __name__ == "__main__":
-    print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
+    print("Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     bot.infinity_polling()  # should be infinity to avoid exceptions (#47)

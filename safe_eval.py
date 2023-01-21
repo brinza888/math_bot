@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
+# Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
 #
 # This file is part of math_bot.
 #
@@ -97,7 +97,7 @@ def safe_eval(expr):
 
 
 if __name__ == "__main__":
-    print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
+    print("Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     while True:
         try:
