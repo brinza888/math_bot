@@ -339,31 +339,3 @@ class ShuntingYard (Generic[T]):
         expr.tokens = output
         expr.type = Expression.Type.RPN
         return expr
-
-
-if __name__ == "__main__":
-    sy = ShuntingYard(
-        [
-            Operator("+", lambda a, b: a + b, 1),
-            Operator("-", lambda a, b: a - b, 1),
-            Operator("*", lambda a, b: a * b, 2),
-            Operator("/", lambda a, b: a / b, 2),
-            Operator(":", lambda a, b: a // b, 2),
-            Operator("%", lambda a, b: a % b, 2),
-            Operator("-", lambda a: -a, 5, ary=Operator.Ary.UNARY),
-            Operator("+", lambda a: +a, 5, ary=Operator.Ary.UNARY),
-            Operator("^", lambda a, b: a ** b, 10, assoc=Operator.Associativity.RIGHT),
-        ],
-        [
-            Function("abs", lambda x: abs(x)),
-            Function("mod", lambda a, b: a % b, argc=2)
-        ],
-        use_variables=False,
-        default_variables={"pi": 3.1415, "e": 2.7182},
-        converter=lambda x: float(x) if "." in x else int(x)
-    )
-    pexpr = sy.parse(input("> "))
-    print(pexpr)
-    pexpr = sy.shunt(pexpr)
-    print(pexpr)
-    print(pexpr.eval())
