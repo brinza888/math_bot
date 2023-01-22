@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
+# Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
 #
 # This file is part of math_bot.
 #

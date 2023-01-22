@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
+# Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
 #
 # This file is part of math_bot.
 #
@@ -43,6 +43,16 @@ class Config:
     MAX_ELEMENTS = int(os.getenv("MAX_ELEMENTS", 101))
     # max number that can be factorized
     FACTORIZE_MAX = int(os.getenv("FACTORIZE_MAX", 10 ** 12))
+
+    # /calc line limit
+    CALC_LINE_LIMIT = int(os.getenv("CALC_LINE_LIMIT", 1000))
+    # /calc operand limit
+    CALC_OPERAND_LIMIT = int(os.getenv("CALC_OPERAND_LIMIT", 50 ** 50))
+    # /calc power limit
+    CALC_POW_UNION_LIMIT = int(os.getenv("CALC_POW_UNION_LIMIT", 30))
+    CALC_POW_EACH_LIMIT = int(os.getenv("CALC_POW_EACH_LIMIT", 50))
+    # /calc factorial limit
+    CALC_FACTORIAL_LIMIT = int(os.getenv("CALC_FACTORIAL_LIMIT", 50))
 
     # Project information
     GITHUB_LINK = os.getenv("GITHUB_LINK", "https://github.com/BrinzaBezrukoff/math_bot")

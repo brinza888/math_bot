@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
+# Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin
 #
 # This file is part of math_bot.
 #
@@ -17,87 +17,106 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import ast
+import math
 import operator as op
-from functools import wraps
+
+from shunting_yard import ShuntingYard, Operator, Function, Evaluator
+from shunting_yard import InvalidSyntax, InvalidName, InvalidArguments, CalculationLimitError
+from config import Config
 
 
-class LimitError (ValueError):
-    """ Base class for limit exceptions """
-    pass
+def cotan(x):
+    return 1 / math.tan(x)
 
 
-class ExpressionLimitError (LimitError):
-    """ Raises if length of expression more than length limit """
-    pass
+mathSY = ShuntingYard(
+    [
+        Operator("+", op.add, 1),
+        Operator("-", op.sub, 1),
+        Operator("*", op.mul, 2),
+        Operator("/", op.truediv, 2),
+        Operator(":", op.floordiv, 2),
+        Operator("%", op.mod, 2),
+        Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
+        Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
+        Operator("^", op.pow, 10, assoc=Operator.Associativity.RIGHT,
+                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
+    ],
+    [
+        # general math functions
+        Function("abs", abs),
+        Function("round", round),
+        Function("pow", pow, argc=2,
+                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
+        Function("sqrt", math.sqrt),
+        Function("factorial", math.factorial,
+                 limiter=Evaluator.limit(Config.CALC_FACTORIAL_LIMIT, None)),
 
+        # angular conversion functions
+        Function("deg", math.degrees),
+        Function("rad", math.radians),
 
-class ArgumentLimitError (LimitError):
-    """ Raises if numeric argument more than argument limit for this operation """
-    pass
+        # trigonometric functions
+        Function("sin", math.sin),
+        Function("cos", math.cos),
+        Function("tan", math.tan),
+        Function("tg", math.tan),
+        Function("cot", cotan),
+        Function("ctg", cotan),
+        Function("acos", math.acos),
+        Function("arccos", math.acos),
+        Function("asin", math.asin),
+        Function("arcsin", math.asin),
+        Function("atan", math.atan),
+        Function("arctg", math.atan),
 
-
-def args_limit(*limits):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            check = True
-            for arg, limit in zip(args, limits):
-                check = check and (arg != -1 and arg > limit)
-            if check:
-                raise ArgumentLimitError("Argument size limit exceeded")
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
-# supported operators
-LINE_LIMIT = 1000
-LIMIT = 50 ** 50
-POW_LIMIT = 30
-
-operators = {
-    ast.Add: args_limit(LIMIT, LIMIT)(op.add),
-    ast.Sub: args_limit(LIMIT, LIMIT)(op.sub),
-    ast.Mult: args_limit(LIMIT, LIMIT)(op.mul),
-    ast.Div: args_limit(LIMIT, LIMIT)(op.truediv),
-    ast.FloorDiv: args_limit(LIMIT, LIMIT)(op.floordiv),
-    ast.Mod: args_limit(LIMIT, LIMIT)(op.mod),
-    # ast.BitXor: args_limit(POW_LIMIT, POW_LIMIT)(op.pow),  # Bug, see issue #39
-    ast.USub: args_limit(LIMIT, LIMIT)(op.neg),
-    ast.UAdd: args_limit(LIMIT, LIMIT)(op.pos),
-}
+        # exponents and logarithms
+        Function("log", math.log, argc=2),
+        Function("lg", math.log10),
+        Function("ln", lambda x: math.log(x)),
+        Function("log2", math.log2),
+        Function("exp", math.exp,
+                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
+    ],
+    use_variables=False,
+    default_variables={
+        "pi": math.pi,
+        "e": math.e
+    },
+    converter=lambda x: float(x) if "." in x else int(x),
+    default_limiter=Evaluator.limit(None, Config.CALC_OPERAND_LIMIT)
+)
 
 
 def safe_eval(expr):
-    if len(expr) >= LINE_LIMIT:
-        raise ExpressionLimitError("Expression size limit exceeded")
-    return _eval(ast.parse(expr, mode="eval").body)
-
-
-def _eval(node):
-    if isinstance(node, ast.Num):  # <number>
-        return node.n
-    else:
-        if not isinstance(node, (ast.BinOp, ast.UnaryOp)):
-            raise TypeError(node)
-        func = operators.get(type(node.op))
-        if not func:
-            raise SyntaxError(node.op)
-        if isinstance(node, ast.BinOp):  # binary
-            return func(_eval(node.left), _eval(node.right))
-        else:  # unary
-            return func(_eval(node.operand))
+    if len(expr) >= Config.CALC_LINE_LIMIT:
+        raise CalculationLimitError("Expression length limit exceeded")
+    pexpr = mathSY.parse(expr)
+    pexpr = mathSY.shunt(pexpr)
+    return pexpr.eval()
 
 
 if __name__ == "__main__":
-    print("Copyright (C) 2021-2022 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
+    print("Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
     print("Licensed under GNU GPL-2.0-or-later")
     while True:
         try:
-            print(safe_eval(input("> ")))
-        except (ValueError, SyntaxError, TypeError) as ex:
-            print(ex.__class__.__name__, ex)
+            result = safe_eval(input("> "))
+            print(result)
+        except InvalidSyntax:
+            print("Invalid syntax in expression")
+        except InvalidName:
+            print("Undefined name in expression")
+        except InvalidArguments:
+            print("Invalid usage of function (arguments)")
+        except CalculationLimitError:
+            print("Calculation reached limitations")
+        except ZeroDivisionError:
+            print("Division by zero")
+        except ArithmeticError:
+            print("Arithmetic error")
+        except ValueError:
+            print("Value not in domain")
         except KeyboardInterrupt:
             print("Bye!")
             break
