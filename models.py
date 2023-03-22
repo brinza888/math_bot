@@ -38,7 +38,7 @@ Session = scoped_session(session_factory)
 class User (Base):
     __tablename__ = "user"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     last_name = Column(String(64))
     first_name = Column(String(64))
     username = Column(String(32))
