@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from math_bot.core.shunting_yard import ShuntingYard, Operator, CalculationLimitError
+from .shunting_yard import ShuntingYard, Operator, CalculationLimitError
 from math_bot.config import Config
 
 

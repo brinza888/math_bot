@@ -20,8 +20,7 @@
 import math
 import operator as op
 
-from math_bot.core.shunting_yard import ShuntingYard, Operator, Function, Evaluator
-from math_bot.core.shunting_yard import InvalidSyntax, InvalidName, InvalidArguments, CalculationLimitError
+from .shunting_yard import *
 from math_bot.config import Config
 
 
