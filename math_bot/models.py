@@ -25,7 +25,7 @@ from sqlalchemy import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, backref, scoped_session
 
-from config import Config
+from math_bot.config import Config
 
 
 engine = create_engine(Config.DATABASE_URI)

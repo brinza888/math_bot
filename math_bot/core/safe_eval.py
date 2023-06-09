@@ -20,9 +20,9 @@
 import math
 import operator as op
 
-from shunting_yard import ShuntingYard, Operator, Function, Evaluator
-from shunting_yard import InvalidSyntax, InvalidName, InvalidArguments, CalculationLimitError
-from config import Config
+from math_bot.core.shunting_yard import ShuntingYard, Operator, Function, Evaluator
+from math_bot.core.shunting_yard import InvalidSyntax, InvalidName, InvalidArguments, CalculationLimitError
+from math_bot.config import Config
 
 
 def cotan(x):

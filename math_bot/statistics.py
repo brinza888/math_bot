@@ -19,8 +19,8 @@
 
 from functools import wraps
 
-from models import User, LogRecord, get_db, close_db
-from config import Config
+from math_bot.models import User, LogRecord, get_db, close_db
+from math_bot.config import Config
 
 
 def log_function_call(log_unit_name: str):
