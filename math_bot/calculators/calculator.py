@@ -16,12 +16,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import math
 import operator as op
 
-from .shunting_yard import *
-from math_bot.config import Config
+from math_bot import bot, log_function_call
+from math_bot.markup import *
+
+from .shunting_yard import ShuntingYard, Operator, Function, Evaluator, errors
 
 
 def cotan(x):
@@ -89,33 +90,36 @@ mathSY = ShuntingYard(
 
 def safe_eval(expr):
     if len(expr) >= Config.CALC_LINE_LIMIT:
-        raise CalculationLimitError("Expression length limit exceeded")
+        raise errors.CalculationLimitError("Expression length limit exceeded")
     pexpr = mathSY.parse(expr)
     pexpr = mathSY.shunt(pexpr)
     return pexpr.eval()
 
 
-if __name__ == "__main__":
-    print("Copyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin")
-    print("Licensed under GNU GPL-2.0-or-later")
-    while True:
-        try:
-            result = safe_eval(input("> "))
-            print(result)
-        except InvalidSyntax:
-            print("Invalid syntax in expression")
-        except InvalidName:
-            print("Undefined name in expression")
-        except InvalidArguments:
-            print("Invalid usage of function (arguments)")
-        except CalculationLimitError:
-            print("Calculation reached limitations")
-        except ZeroDivisionError:
-            print("Division by zero")
-        except ArithmeticError:
-            print("Arithmetic error")
-        except ValueError:
-            print("Value not in domain")
-        except KeyboardInterrupt:
-            print("Bye!")
-            break
+@bot.message_handler(commands=["calc"])
+def calc_input(message):
+    m = bot.send_message(message.chat.id, "Введите выражение:", parse_mode="html")
+    bot.register_next_step_handler(m, calc_output)
+
+
+@log_function_call("calc")
+def calc_output(message):
+    try:
+        answer = str(safe_eval(message.text))
+    except errors.InvalidSyntax:
+        bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
+    except errors.InvalidName:
+        bot.send_message(message.chat.id, "Встречена неизвестная переменная", reply_markup=menu)
+    except errors.InvalidArguments:
+        bot.send_message(message.chat.id, "Неправильное использование функции")
+    except errors.CalculationLimitError:
+        bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
+    except ZeroDivisionError:
+        bot.send_message(message.chat.id, "Во время выполнения встречено деление на 0", reply_markup=menu)
+    except ArithmeticError:
+        bot.send_message(message.chat.id, "Арифметическая ошибка", reply_markup=menu)
+    except ValueError:
+        bot.send_message(message.chat.id, "Не удалось распознать значение", reply_markup=menu)
+    else:
+        bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
+        return answer

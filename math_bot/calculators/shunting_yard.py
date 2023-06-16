@@ -23,20 +23,18 @@ from abc import ABCMeta
 from enum import Enum
 
 
-class InvalidSyntax (SyntaxError):
-    pass
+class errors:
+    class InvalidSyntax (SyntaxError):
+        pass
 
+    class InvalidName (NameError):
+        pass
 
-class InvalidName (NameError):
-    pass
+    class InvalidArguments (SyntaxError):
+        pass
 
-
-class InvalidArguments (SyntaxError):
-    pass
-
-
-class CalculationLimitError (ValueError):
-    pass
+    class CalculationLimitError (ValueError):
+        pass
 
 
 T = TypeVar("T")
@@ -96,7 +94,7 @@ class Evaluator (Generic[T], Token):
     def eval(self, *args: Number) -> Number:
         values = [x.value for x in args]
         if self.limiter and not self.limiter(values):
-            raise CalculationLimitError(f"Arguments failed limitations check in {self}")
+            raise errors.CalculationLimitError(f"Arguments failed limitations check in {self}")
         return Number(self.func(*values))
 
     @staticmethod
@@ -190,18 +188,18 @@ class Expression (Generic[T]):
                 stack.append(top)
             elif isinstance(top, Variable):
                 if top.name not in vars_:
-                    raise InvalidName(f"Variable value is not defined for '{top.name}'")
+                    raise errors.InvalidName(f"Variable value is not defined for '{top.name}'")
                 stack.append(Number(vars_[top.name]))
             elif isinstance(top, Evaluator):
                 if len(stack) < top.argc:
-                    raise InvalidArguments(f"Not enough arguments for evaluator")
+                    raise errors.InvalidArguments(f"Not enough arguments for evaluator")
                 args = [stack.pop() for _ in range(top.argc)]
                 args.reverse()
                 stack.append(top.eval(*args))
             else:
                 raise TypeError(f"Met not allowed token in RPN: {top}")
         if len(stack) > 1:
-            raise InvalidSyntax("Stack size greater than 1 after evaluation")
+            raise errors.InvalidSyntax("Stack size greater than 1 after evaluation")
         return stack[0].value
 
     def __repr__(self):
@@ -234,7 +232,7 @@ class ShuntingYard (Generic[T]):
 
     def parse(self, string: str) -> Expression:
         if not string:
-            raise InvalidSyntax("String is empty, nothing to parse")
+            raise errors.InvalidSyntax("String is empty, nothing to parse")
         input = deque(string)
         ary_state = Operator.Ary.UNARY
         expr = Expression(self.default_variables)
@@ -260,7 +258,7 @@ class ShuntingYard (Generic[T]):
                     ary_state = Operator.Ary.NONE
                 else:
                     if not self.use_variables and name not in self.default_variables:
-                        raise InvalidName(f"Invalid name '{name}' at pos {position}")
+                        raise errors.InvalidName(f"Invalid name '{name}' at pos {position}")
                     expr.register_variable(name)
                     expr.push(Variable(name))
                     ary_state = Operator.Ary.BINARY
@@ -282,7 +280,7 @@ class ShuntingYard (Generic[T]):
                 expr.push(CloseBrace())
                 ary_state = Operator.Ary.BINARY
             else:
-                raise InvalidSyntax(f"Invalid character '{char}' at pos {position}")
+                raise errors.InvalidSyntax(f"Invalid character '{char}' at pos {position}")
             position += 1
         return expr
 
@@ -304,7 +302,7 @@ class ShuntingYard (Generic[T]):
                         break
                     output.append(stack.pop())
                 if not args_check:
-                    raise InvalidSyntax("Missing argument separator or left brace in expression")
+                    raise errors.InvalidSyntax("Missing argument separator or left brace in expression")
             elif isinstance(token, Operator):
                 while stack:
                     top = stack[-1]
@@ -330,11 +328,11 @@ class ShuntingYard (Generic[T]):
                         break
                     output.append(top)
                 if not braces_check:
-                    raise InvalidSyntax("Missing left brace in expression")
+                    raise errors.InvalidSyntax("Missing left brace in expression")
         while stack:
             top = stack.pop()
             if isinstance(top, OpenBrace):
-                raise InvalidSyntax("Missing right brace in expression")
+                raise errors.InvalidSyntax("Missing right brace in expression")
             output.append(top)
         expr.tokens = output
         expr.type = Expression.Type.RPN

@@ -21,8 +21,47 @@ import io
 
 from math_bot import bot, log_function_call
 from math_bot.markup import *
-from math_bot.core.logic import build_table
-from math_bot.core import shunting_yard as sy
+
+from .shunting_yard import ShuntingYard, Operator, errors
+
+
+def logic_converter(x: str):
+    v = int(x)
+    if v not in [0, 1]:
+        raise ValueError("Constant must be a logic value: 1 (true) or 0 (false)")
+    return bool(v)
+
+
+logicSY = ShuntingYard(
+    [
+        Operator("~", lambda a: not a, 20, ary=Operator.Ary.UNARY),  # NOT
+        Operator("&", lambda a, b: a and b, 10),  # AND
+
+        Operator("|", lambda a, b: a or b, 5),  # OR
+        Operator("^", lambda a, b: a != b, 5),  # XOR
+
+        Operator(">", lambda a, b: not a or b, 2),  # IMP
+        Operator("=", lambda a, b: a == b, 1),  # EQU
+    ],
+    [],
+    use_variables=True,
+    converter=logic_converter
+)
+
+
+def build_table(expr):
+    pexpr = logicSY.parse(expr)
+    logicSY.shunt(pexpr)
+    variables = list(sorted(pexpr.variables))
+    n = len(variables)
+    if n > Config.MAX_VARS:
+        raise errors.CalculationLimitError("Variables count limit reached")
+    table = []
+    for i in range(2 ** n):
+        values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
+        vars_ = {k: v for k, v in zip(variables, values)}
+        table.append(values + [int(pexpr.eval(vars_))])
+    return table, variables
 
 
 @bot.message_handler(commands=["logic"])
@@ -44,13 +83,13 @@ def logic_output(message):
         answer = f"<code>{out.getvalue()}</code>"
         bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
         return answer
-    except sy.InvalidSyntax:
+    except errors.InvalidSyntax:
         bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
-    except sy.InvalidName:
+    except errors.InvalidName:
         bot.send_message(message.chat.id, "Встречена неизвестная переменная", reply_markup=menu)
-    except sy.InvalidArguments:
+    except errors.InvalidArguments:
         bot.send_message(message.chat.id, "Неправильное использование функции", reply_markup=menu)
-    except sy.CalculationLimitError:
+    except errors.CalculationLimitError:
         bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
     except ValueError:
         bot.send_message(message.chat.id, "Не удалось распознать значение. Допустимые: 0, 1", reply_markup=menu)

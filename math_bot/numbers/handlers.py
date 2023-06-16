@@ -20,7 +20,8 @@
 from math_bot import bot, log_function_call
 from math_bot.markup import *
 from math_bot.config import Config
-from math_bot.core.numbers import *
+
+from .numbers import *
 
 
 @bot.message_handler(commands=["idempotents", "nilpotents"])
