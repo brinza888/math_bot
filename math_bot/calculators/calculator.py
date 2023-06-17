@@ -19,8 +19,8 @@
 import math
 import operator as op
 
-from math_bot import bot, log_function_call
-from math_bot.markup import *
+from math_bot.module import MBModule
+from math_bot import markup
 
 from .shunting_yard import ShuntingYard, Operator, Function, Evaluator, errors
 
@@ -29,97 +29,102 @@ def cotan(x):
     return 1 / math.tan(x)
 
 
-mathSY = ShuntingYard(
-    [
-        Operator("+", op.add, 1),
-        Operator("-", op.sub, 1),
-        Operator("*", op.mul, 2),
-        Operator("/", op.truediv, 2),
-        Operator(":", op.floordiv, 2),
-        Operator("%", op.mod, 2),
-        Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
-        Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
-        Operator("^", op.pow, 10, assoc=Operator.Associativity.RIGHT,
-                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
-    ],
-    [
-        # general math functions
-        Function("abs", abs),
-        Function("round", round),
-        Function("pow", pow, argc=2,
-                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
-        Function("sqrt", math.sqrt),
-        Function("factorial", math.factorial,
-                 limiter=Evaluator.limit(Config.CALC_FACTORIAL_LIMIT, None)),
+class CalculatorModule(MBModule):
 
-        # angular conversion functions
-        Function("deg", math.degrees),
-        Function("rad", math.radians),
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mathSY = ShuntingYard(
+            [
+                Operator("+", op.add, 1),
+                Operator("-", op.sub, 1),
+                Operator("*", op.mul, 2),
+                Operator("/", op.truediv, 2),
+                Operator(":", op.floordiv, 2),
+                Operator("%", op.mod, 2),
+                Operator("-", op.neg, 5, ary=Operator.Ary.UNARY),
+                Operator("+", op.pos, 5, ary=Operator.Ary.UNARY),
+                Operator("^", op.pow, 10, assoc=Operator.Associativity.RIGHT,
+                         limiter=Evaluator.limit(self.config.CALC_POW_UNION_LIMIT,
+                                                 self.config.CALC_POW_EACH_LIMIT)),
+            ],
+            [
+                # general math functions
+                Function("abs", abs),
+                Function("round", round),
+                Function("pow", pow, argc=2,
+                         limiter=Evaluator.limit(self.config.CALC_POW_UNION_LIMIT,
+                                                 self.config.CALC_POW_EACH_LIMIT)),
+                Function("sqrt", math.sqrt),
+                Function("factorial", math.factorial,
+                         limiter=Evaluator.limit(self.config.CALC_FACTORIAL_LIMIT, None)),
 
-        # trigonometric functions
-        Function("sin", math.sin),
-        Function("cos", math.cos),
-        Function("tan", math.tan),
-        Function("tg", math.tan),
-        Function("cot", cotan),
-        Function("ctg", cotan),
-        Function("acos", math.acos),
-        Function("arccos", math.acos),
-        Function("asin", math.asin),
-        Function("arcsin", math.asin),
-        Function("atan", math.atan),
-        Function("arctg", math.atan),
+                # angular conversion functions
+                Function("deg", math.degrees),
+                Function("rad", math.radians),
 
-        # exponents and logarithms
-        Function("log", math.log, argc=2),
-        Function("lg", math.log10),
-        Function("ln", lambda x: math.log(x)),
-        Function("log2", math.log2),
-        Function("exp", math.exp,
-                 limiter=Evaluator.limit(Config.CALC_POW_UNION_LIMIT, Config.CALC_POW_EACH_LIMIT)),
-    ],
-    use_variables=False,
-    default_variables={
-        "pi": math.pi,
-        "e": math.e
-    },
-    converter=lambda x: float(x) if "." in x else int(x),
-    default_limiter=Evaluator.limit(None, Config.CALC_OPERAND_LIMIT)
-)
+                # trigonometric functions
+                Function("sin", math.sin),
+                Function("cos", math.cos),
+                Function("tan", math.tan),
+                Function("tg", math.tan),
+                Function("cot", cotan),
+                Function("ctg", cotan),
+                Function("acos", math.acos),
+                Function("arccos", math.acos),
+                Function("asin", math.asin),
+                Function("arcsin", math.asin),
+                Function("atan", math.atan),
+                Function("arctg", math.atan),
 
+                # exponents and logarithms
+                Function("log", math.log, argc=2),
+                Function("lg", math.log10),
+                Function("ln", lambda x: math.log(x)),
+                Function("log2", math.log2),
+                Function("exp", math.exp,
+                         limiter=Evaluator.limit(self.config.CALC_POW_UNION_LIMIT,
+                                                 self.config.CALC_POW_EACH_LIMIT)),
+            ],
+            use_variables=False,
+            default_variables={
+                "pi": math.pi,
+                "e": math.e
+            },
+            converter=lambda x: float(x) if "." in x else int(x),
+            default_limiter=Evaluator.limit(None, self.config.CALC_OPERAND_LIMIT)
+        )
 
-def safe_eval(expr):
-    if len(expr) >= Config.CALC_LINE_LIMIT:
-        raise errors.CalculationLimitError("Expression length limit exceeded")
-    pexpr = mathSY.parse(expr)
-    pexpr = mathSY.shunt(pexpr)
-    return pexpr.eval()
+    def setup(self):
+        self.bot.register_message_handler(self.calc_input, commands=["calc", "eval"])
 
+    def safe_eval(self, expr):
+        if len(expr) >= self.config.CALC_LINE_LIMIT:
+            raise errors.CalculationLimitError("Expression length limit exceeded")
+        pexpr = self.mathSY.parse(expr)
+        pexpr = self.mathSY.shunt(pexpr)
+        return pexpr.eval()
 
-@bot.message_handler(commands=["calc"])
-def calc_input(message):
-    m = bot.send_message(message.chat.id, "Введите выражение:", parse_mode="html")
-    bot.register_next_step_handler(m, calc_output)
+    def calc_input(self, message):
+        m = self.bot.send_message(message.chat.id, "Введите выражение:")
+        self.bot.register_next_step_handler(m, self.calc_output)
 
-
-@log_function_call("calc")
-def calc_output(message):
-    try:
-        answer = str(safe_eval(message.text))
-    except errors.InvalidSyntax:
-        bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
-    except errors.InvalidName:
-        bot.send_message(message.chat.id, "Встречена неизвестная переменная", reply_markup=menu)
-    except errors.InvalidArguments:
-        bot.send_message(message.chat.id, "Неправильное использование функции")
-    except errors.CalculationLimitError:
-        bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
-    except ZeroDivisionError:
-        bot.send_message(message.chat.id, "Во время выполнения встречено деление на 0", reply_markup=menu)
-    except ArithmeticError:
-        bot.send_message(message.chat.id, "Арифметическая ошибка", reply_markup=menu)
-    except ValueError:
-        bot.send_message(message.chat.id, "Не удалось распознать значение", reply_markup=menu)
-    else:
-        bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
-        return answer
+    def calc_output(self, message):
+        answer = "unexpected error"
+        try:
+            answer = str(self.safe_eval(message.text))
+        except errors.InvalidSyntax:
+            answer = "Синтаксическая ошибка в выражении"
+        except errors.InvalidName:
+            answer = "Встречена неизвестная переменная"
+        except errors.InvalidArguments:
+            answer = "Неправильное использование функции"
+        except errors.CalculationLimitError:
+            answer = "Достигнут лимит возможной сложности вычислений"
+        except ZeroDivisionError:
+            answer = "Во время выполнения встречено деление на 0"
+        except ArithmeticError:
+            answer = "Арифметическая ошибка"
+        except ValueError:
+            answer = "Не удалось распознать значение"
+        finally:
+            self.bot.send_message(message.chat.id, answer, reply_markup=markup.menu)

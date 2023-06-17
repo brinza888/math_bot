@@ -17,91 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import os
-from telebot.apihelper import ApiTelegramException
-from git import Repo
+# WARNING
+# Module doesn't work and currently not in use
+# TODO: make this module work, and refac
 
 from math_bot import bot
 from math_bot.statistics import get_db, close_db
 from math_bot.models import User, ReportRecord
 from math_bot.markup import *
-
-
-@bot.message_handler(commands=["start"])
-def start_message(message):
-    send_mess = (
-        f"<b>Привет{ ', ' + message.from_user.first_name if message.from_user.first_name is not None else ''}!</b>\n"
-        f"Используй клавиатуру или команды для вызова нужной фишки\n"
-        f"/help - вызов помощи\n"
-        f"/about - информация о боте\n"
-        f"Наш канал: {Config.CHANNEL_LINK}\n"
-        )
-    bot.send_message(message.chat.id, send_mess, parse_mode="html", reply_markup=menu)
-    # User first-time creation
-    db = get_db()
-    User.get_or_create(db, message.from_user.id, message.from_user.last_name,
-                       message.from_user.first_name, message.from_user.username)
-    close_db()
-
-
-@bot.message_handler(commands=["help"])
-def send_help(message):
-    inline_menu = get_report_menu(message.from_user.id)
-    bot.send_message(message.chat.id,
-                     ("<b>Работа с матрицами</b>\n"
-                      "/det - определитель матрицы.\n"
-                      "/ref - ступенчатый вид матрицы (верхне-треугольный).\n"
-                      "/m_inverse - обратная матрица.\n"
-                      "\n<b>Теория чисел и дискретная математика</b>\n"
-                      "/factorize - разложение натурального числа в простые.\n"
-                      "/euclid - НОД двух чисел и решение Диофантового уравнения.\n"
-                      "/idempotents - идемпотентные элементы в Z/n.\n"
-                      "/nilpotents - нильпотентные элементы в Z/n.\n"
-                      "/inverse - обратный элемент в Z/n.\n"
-                      "/logic - таблица истинности выражения.\n"
-                      "\n<b>Калькуляторы</b>\n"
-                      "/calc - калькулятор математических выражений.\n"
-                      "\n<b>Об этом боте</b> /about\n"
-                      ),
-                     parse_mode="html", reply_markup=inline_menu)
-
-
-@bot.message_handler(commands=["broadcast", "bc"])
-def broadcast_input(message):
-    if message.from_user.id not in Config.ADMINS:
-        return
-    m = bot.send_message(message.chat.id, "Сообщение для рассылки:")
-    bot.register_next_step_handler(m, broadcast)
-
-
-def broadcast(message):
-    db = get_db()
-    blocked_count = 0
-    for user in db.query(User).all():
-        try:
-            bot.send_message(user.id, message.text)
-        except ApiTelegramException:
-            blocked_count += 1
-    bot.send_message(message.chat.id, "Рассылка успешно завершена!\n"
-                                      f"Не получили рассылку: {blocked_count}")
-    close_db()
-
-
-@bot.message_handler(commands=["about"])
-def send_about(message):
-    repo = Repo(os.getcwd())
-    version = next((tag for tag in repo.tags if tag.commit == repo.head.commit), None)
-    warning = ""
-    if not version:
-        version = repo.head.commit.hexsha
-        warning = " (<u>нестабильная</u>)"
-    bot.send_message(message.chat.id,
-                     f"Версия{warning}: <b>{version}</b>\n"
-                     f"Наш канал: {Config.CHANNEL_LINK}\n"
-                     f"\nCopyright (C) 2021-2023 Ilya Bezrukov, Stepan Chizhov, Artem Grishin\n"
-                     f"GitHub: {Config.GITHUB_LINK}\n"
-                     f"<b>Под лицензией GNU-GPL 2.0-or-latter</b>",
-                     parse_mode="html")
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "report")

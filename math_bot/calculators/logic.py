@@ -19,8 +19,8 @@
 
 import io
 
-from math_bot import bot, log_function_call
-from math_bot.markup import *
+from math_bot.module import MBModule
+from math_bot import markup
 
 from .shunting_yard import ShuntingYard, Operator, errors
 
@@ -32,64 +32,66 @@ def logic_converter(x: str):
     return bool(v)
 
 
-logicSY = ShuntingYard(
-    [
-        Operator("~", lambda a: not a, 20, ary=Operator.Ary.UNARY),  # NOT
-        Operator("&", lambda a, b: a and b, 10),  # AND
+class LogicModule (MBModule):
+    # TODO: make logic operators description
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logicSY = ShuntingYard(
+            [
+                Operator("~", lambda a: not a, 20, ary=Operator.Ary.UNARY),  # NOT
+                Operator("&", lambda a, b: a and b, 10),  # AND
 
-        Operator("|", lambda a, b: a or b, 5),  # OR
-        Operator("^", lambda a, b: a != b, 5),  # XOR
+                Operator("|", lambda a, b: a or b, 5),  # OR
+                Operator("^", lambda a, b: a != b, 5),  # XOR
 
-        Operator(">", lambda a, b: not a or b, 2),  # IMP
-        Operator("=", lambda a, b: a == b, 1),  # EQU
-    ],
-    [],
-    use_variables=True,
-    converter=logic_converter
-)
+                Operator(">", lambda a, b: not a or b, 2),  # IMP
+                Operator("=", lambda a, b: a == b, 1),  # EQU
+            ],
+            [],
+            use_variables=True,
+            converter=logic_converter
+        )
 
+    def build_table(self, expr):
+        pexpr = self.logicSY.parse(expr)
+        self.logicSY.shunt(pexpr)
+        variables = list(sorted(pexpr.variables))
+        n = len(variables)
+        if n > self.config.MAX_VARS:
+            raise errors.CalculationLimitError("Variables count limit reached")
+        table = []
+        for i in range(2 ** n):
+            values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
+            vars_ = {k: v for k, v in zip(variables, values)}
+            table.append(values + [int(pexpr.eval(vars_))])
+        return table, variables
 
-def build_table(expr):
-    pexpr = logicSY.parse(expr)
-    logicSY.shunt(pexpr)
-    variables = list(sorted(pexpr.variables))
-    n = len(variables)
-    if n > Config.MAX_VARS:
-        raise errors.CalculationLimitError("Variables count limit reached")
-    table = []
-    for i in range(2 ** n):
-        values = [int(x) for x in bin(i)[2:].rjust(n, "0")]
-        vars_ = {k: v for k, v in zip(variables, values)}
-        table.append(values + [int(pexpr.eval(vars_))])
-    return table, variables
+    def setup(self):
+        self.bot.register_message_handler(self.logic_input, commands=["logic"])
 
+    def logic_input(self, message):
+        m = self.bot.send_message(message.chat.id, "Введите логическое выражение:",
+                                  reply_markup=markup.hide_menu)
+        self.bot.register_next_step_handler(m, self.logic_output)
 
-@bot.message_handler(commands=["logic"])
-def logic_input(message):
-    m = bot.send_message(message.chat.id, "Введите логическое выражение:",  # TODO: make logic operators description
-                         reply_markup=hide_menu,
-                         parse_mode="html")
-    bot.register_next_step_handler(m, logic_output)
-
-
-@log_function_call("logic")
-def logic_output(message):
-    try:
-        table, variables = build_table(message.text)
-        out = io.StringIO()  # abstract file (file-object)
-        print(*variables, "F", file=out, sep=" " * 2)
-        for row in table:
-            print(*row, file=out, sep=" " * 2)
-        answer = f"<code>{out.getvalue()}</code>"
-        bot.send_message(message.chat.id, answer, parse_mode="html", reply_markup=menu)
-        return answer
-    except errors.InvalidSyntax:
-        bot.send_message(message.chat.id, "Синтаксическая ошибка в выражении", reply_markup=menu)
-    except errors.InvalidName:
-        bot.send_message(message.chat.id, "Встречена неизвестная переменная", reply_markup=menu)
-    except errors.InvalidArguments:
-        bot.send_message(message.chat.id, "Неправильное использование функции", reply_markup=menu)
-    except errors.CalculationLimitError:
-        bot.send_message(message.chat.id, "Достигнут лимит возможной сложности вычислений", reply_markup=menu)
-    except ValueError:
-        bot.send_message(message.chat.id, "Не удалось распознать значение. Допустимые: 0, 1", reply_markup=menu)
+    def logic_output(self, message):
+        answer = "unexpected error"
+        try:
+            table, variables = self.build_table(message.text)
+            out = io.StringIO()  # abstract file (file-object)
+            print(*variables, "F", file=out, sep=" " * 2)
+            for row in table:
+                print(*row, file=out, sep=" " * 2)
+            answer = f"<code>{out.getvalue()}</code>"
+        except errors.InvalidSyntax:
+            answer = "Синтаксическая ошибка в выражении"
+        except errors.InvalidName:
+            answer = "Встречена неизвестная переменная"
+        except errors.InvalidArguments:
+            answer = "Неправильное использование функции"
+        except errors.CalculationLimitError:
+            answer = "Достигнут лимит возможной сложности вычислений"
+        except ValueError:
+            answer = "Не удалось распознать значение. Допустимые: 0, 1"
+        finally:
+            self.bot.send_message(message.chat.id, answer, reply_markup=markup.menu)

@@ -17,7 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from math_bot import bot
+from math_bot import create_bot
+from math_bot.config import Config
+
+
+bot = create_bot(Config())
 
 
 if __name__ == "__main__":
