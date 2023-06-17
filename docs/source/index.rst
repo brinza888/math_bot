@@ -10,6 +10,8 @@ Welcome to Math Bot's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+.. automodule:: math_bot.numbers.numbers
+   :members:
 
 
 Indices and tables
